@@ -1,0 +1,320 @@
+# Core dependencies
+streamlit>=1.28.0
+pandas>=2.0.0
+numpy>=1.24.0
+requests>=2.31.0
+aiohttp>=3.8.0
+python-dotenv>=1.0.0
+
+# AI/LLM dependencies
+openai>=1.3.0
+anthropic>=0.3.0
+langchain>=0.0.300
+langchain-openai>=0.0.2
+
+# Data processing
+scikit-learn>=1.3.0
+scipy>=1.11.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.17.0
+
+# Cryptocurrency specific
+ccxt>=4.1.0
+web3>=6.10.0
+solana>=0.30.0
+pycoingecko>=3.1.0
+
+# Database
+pymongo>=4.5.0
+redis>=5.0.0
+sqlalchemy>=2.0.0
+
+# Caching and performance
+cachetools>=5.3.0
+tenacity>=8.2.0
+
+# Configuration management
+pydantic>=2.4.0
+pyyaml>=6.0.1
+toml>=0.10.2
+
+# Logging and monitoring
+loguru>=0.7.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# Development tools
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.5.0
+isort>=5.12.0
+
+# Documentation generation
+pypandoc>=1.11
+markdown>=3.5.0
+
+# Time handling
+python-dateutil>=2.8.2
+pytz>=2023.3
+
+# Data validation
+marshmallow>=3.20.0
+cerberus>=1.3.4
+
+# HTTP client
+httpx>=0.25.0
+urllib3>=2.0.0
+
+# Async support
+asyncio-throttle>=1.0.0
+aiofiles>=23.2.0
+
+# Encryption and security
+cryptography>=41.0.0
+python-jose>=3.3.0
+
+# Report generation
+reportlab>=4.0.0
+jinja2>=3.1.0
+
+# Image processing (optional)
+pillow>=10.0.0
+
+# Data analysis enhancement
+statsmodels>=0.14.0
+arch>=6.3.0
+
+# API documentation
+fastapi>=0.104.0
+uvicorn>=0.24.0
+
+# Visualization
+altair>=5.1.0
+vl-convert-python>=1.2.0
+
+# Cryptocurrency specific tools
+eth-account>=0.9.0
+hexbytes>=0.3.1
+
+# Web3 related
+eth-abi>=4.2.0
+eth-hash>=0.5.1
+
+# Performance monitoring
+memory-profiler>=0.61.0
+psutil>=5.9.0
+
+# Configuration management
+python-decouple>=3.8
+click>=8.1.0
+
+# Data serialization
+orjson>=3.9.0
+msgpack>=1.0.5
+
+# Network tools
+socketio>=5.9.0
+websocket-client>=1.6.0
+
+# Financial calculations
+numpy-financial>=1.0.0
+TA-Lib>=0.4.28
+
+# Machine learning (optional)
+tensorflow>=2.13.0
+torch>=2.1.0
+transformers>=4.35.0
+
+# Natural language processing
+nltk>=3.8.0
+spacy>=3.7.0
+textblob>=0.17.1
+
+# Time series
+pandas-ta>=0.3.14b0
+tslearn>=0.6.0
+
+# Database tools
+alembic>=1.12.0
+redis-om>=0.2.0
+
+# Task queue
+celery>=5.3.0
+
+# Monitoring and logging
+structlog>=23.1.0
+rich>=13.6.0
+
+# Security
+bcrypt>=4.0.0
+pyjwt>=2.8.0
+
+# API testing
+requests-mock>=1.11.0
+
+# Development environment
+ipython>=8.15.0
+
+# Code quality
+pre-commit>=3.5.0
+bandit>=1.7.0
+safety>=2.3.0
+
+# Documentation
+sphinx>=7.1.0
+sphinx-rtd-theme>=1.3.0
+
+# Deployment
+gunicorn>=21.2.0
+supervisor>=4.2.5
+
+# Backup and recovery
+boto3>=1.28.0
+azure-storage-blob>=12.17.0
+
+# Email notifications
+sendgrid>=6.10.0
+
+# Cache
+dogpile.cache>=1.3.0
+
+# Data migration
+alembic>=1.12.0
+
+# Containerization
+docker-compose>=1.29.0
+
+# Monitoring
+grafana>=10.2.0
+prometheus>=2.47.0
+
+# Log aggregation
+elasticsearch>=8.10.0
+logstash>=8.10.0
+kibana>=8.10.0
+
+# Alerting
+alertmanager>=0.26.0
+
+# Backup
+restic>=0.16.0
+duplicity>=1.2.0
+
+# Performance testing
+locust>=2.17.0
+
+# Security scanning
+owasp-zap>=2.13.0
+clair>=4.5.0
+
+# Dependency management
+pip-tools>=7.3.0
+pipdeptree>=2.13.0
+
+# Package management
+poetry>=1.6.0
+pipenv>=2023.10.0
+
+# Virtual environment
+virtualenv>=20.24.0
+
+# Code generation
+mako>=1.2.4
+
+# Documentation generation
+mkdocs>=1.5.0
+mkdocs-material>=9.4.0
+
+# Test coverage
+coverage>=7.3.0
+
+# Performance analysis
+line_profiler>=4.1.0
+
+# Memory analysis
+objgraph>=3.6.0
+
+# System monitoring
+GPUtil>=1.4.0
+
+# File monitoring
+watchdog>=3.0.0
+
+# Configuration management
+configparser>=5.3.0
+configobj>=5.0.8
+
+# Data validation
+jsonschema>=4.19.0
+fastjsonschema>=2.19.0
+
+# Data parsing
+lxml>=4.9.0
+beautifulsoup4>=4.12.0
+
+# Data extraction
+scrapy>=2.11.0
+selenium>=4.15.0
+
+# Data export
+openpyxl>=3.1.0
+xlsxwriter>=3.1.0
+
+# Data storage
+mysql-connector-python>=8.1.0
+psycopg2-binary>=2.9.7
+
+# Data compression
+7z>=23.0.0
+
+# Data encryption
+veracrypt>=1.25.9
+
+# Data encoding
+base64>=1.0.0
+
+# Data monitoring
+tail>=1.0.0
+
+# Data notification
+mail>=1.0.0
+
+# Data optimization
+optimize>=1.0.0
+
+# Data migration
+migrate>=1.0.0
+
+# Data transformation
+transform>=1.0.0
+
+# Data standardization
+normalize>=1.0.0
+
+# Data quality
+quality>=1.0.0
+
+# Data governance
+governance>=1.0.0
+
+# Data security
+security>=1.0.0
+
+# Data compliance
+compliance>=1.0.0
+
+# Data audit
+audit>=1.0.0
+
+# Data reporting
+report>=1.0.0
+
+# Data insights
+insight>=1.0.0
+
+# Data intelligence
+intelligence>=1.0.0

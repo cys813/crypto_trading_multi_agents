@@ -14,7 +14,7 @@ from datetime import datetime
 project_root = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, project_root)
 
-from crypto_trading_agents.crypto_trading_agents.config.ai_analysis_config import get_config_template
+from src.crypto_trading_agents.config.ai_analysis_config import get_config_template
 
 def example_traditional_sentiment_analysis():
     """传统情绪分析示例"""

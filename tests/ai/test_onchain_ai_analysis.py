@@ -13,8 +13,8 @@ from typing import Dict, Any
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from crypto_trading_agents.agents.analysts.onchain_analyst import OnchainAnalyst
-from crypto_trading_agents.config.ai_analysis_config import get_ai_analysis_config
+from src.crypto_trading_agents.agents.analysts.onchain_analyst import OnchainAnalyst
+from src.crypto_trading_agents.config.ai_analysis_config import get_ai_analysis_config
 
 def create_test_config() -> Dict[str, Any]:
     """创建测试配置"""

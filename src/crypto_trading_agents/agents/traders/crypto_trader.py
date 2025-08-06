@@ -9,7 +9,7 @@ import logging
 from datetime import datetime, timedelta
 from enum import Enum
 
-from crypto_trading_agents.services.ai_analysis_mixin import StandardAIAnalysisMixin
+from src.crypto_trading_agents.services.ai_analysis_mixin import StandardAIAnalysisMixin
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +48,8 @@ class CryptoTrader(StandardAIAnalysisMixin):
         self.risk_config = config.get("risk_config", {})
         
         # 初始化统一LLM服务
-        from crypto_trading_agents.services.llm_service import initialize_llm_service
-        from crypto_trading_agents.config.ai_analysis_config import get_unified_llm_service_config
+        from src.crypto_trading_agents.services.llm_service import initialize_llm_service
+        from src.crypto_trading_agents.config.ai_analysis_config import get_unified_llm_service_config
         
         llm_config = get_unified_llm_service_config()
         initialize_llm_service(llm_config)

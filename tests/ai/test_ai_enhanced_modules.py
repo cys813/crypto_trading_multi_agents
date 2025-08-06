@@ -134,7 +134,7 @@ def test_market_maker_analyst():
             mock_service.call_llm.return_value = mock_llm_response("市场微观结构分析")
             mock_service_class.return_value = mock_service
             
-            from crypto_trading_agents.agents.analysts.market_maker_analyst import MarketMakerAnalyst
+            from src.crypto_trading_agents.agents.analysts.market_maker_analyst import MarketMakerAnalyst
             
             # 初始化分析师
             analyst = MarketMakerAnalyst(test_config)
@@ -167,7 +167,7 @@ def test_crypto_risk_manager():
             mock_service.call_llm.return_value = mock_llm_response("风险管理分析")
             mock_service_class.return_value = mock_service
             
-            from crypto_trading_agents.agents.risk_managers.crypto_risk_manager import CryptoRiskManager
+            from src.crypto_trading_agents.agents.risk_managers.crypto_risk_manager import CryptoRiskManager
             
             # 初始化风险管理器
             risk_manager = CryptoRiskManager(test_config)
@@ -200,7 +200,7 @@ def test_crypto_trader():
             mock_service.call_llm.return_value = mock_llm_response("交易决策分析")
             mock_service_class.return_value = mock_service
             
-            from crypto_trading_agents.agents.traders.crypto_trader import CryptoTrader
+            from src.crypto_trading_agents.agents.traders.crypto_trader import CryptoTrader
             
             # 初始化交易员
             trader = CryptoTrader(test_config)
@@ -241,9 +241,9 @@ def test_integration():
             mock_service.call_llm.side_effect = lambda prompt: mock_llm_response(prompt)
             mock_service_class.return_value = mock_service
             
-            from crypto_trading_agents.agents.analysts.market_maker_analyst import MarketMakerAnalyst
-            from crypto_trading_agents.agents.risk_managers.crypto_risk_manager import CryptoRiskManager
-            from crypto_trading_agents.agents.traders.crypto_trader import CryptoTrader
+            from src.crypto_trading_agents.agents.analysts.market_maker_analyst import MarketMakerAnalyst
+            from src.crypto_trading_agents.agents.risk_managers.crypto_risk_manager import CryptoRiskManager
+            from src.crypto_trading_agents.agents.traders.crypto_trader import CryptoTrader
             
             # 初始化所有模块
             analyst = MarketMakerAnalyst(test_config)

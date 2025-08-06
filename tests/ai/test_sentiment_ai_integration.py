@@ -15,7 +15,7 @@ from unittest.mock import Mock, patch
 project_root = os.path.dirname(os.path.dirname(__file__))
 sys.path.insert(0, project_root)
 
-from crypto_trading_agents.agents.analysts.sentiment_analyst import SentimentAnalyst
+from src.crypto_trading_agents.agents.analysts.sentiment_analyst import SentimentAnalyst
 
 def test_sentiment_analyst_ai_integration():
     """测试情绪分析师AI集成功能"""

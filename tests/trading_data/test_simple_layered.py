@@ -7,8 +7,8 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from crypto_trading_agents.data_sources.exchange_data_sources import ExchangeManager
-from crypto_trading_agents.database.models import layered_data_storage
+from src.data_sources.exchange_data_sources import ExchangeManager
+from src.database.models import layered_data_storage
 
 def test_layered_data():
     """测试分层数据获取"""

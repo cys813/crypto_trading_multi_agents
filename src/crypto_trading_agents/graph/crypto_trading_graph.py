@@ -18,7 +18,7 @@ from ..agents.researchers.bear_researcher import BearResearcher
 from ..agents.traders.crypto_trader import CryptoTrader
 from ..agents.risk_managers.crypto_risk_manager import CryptoRiskManager
 from ..agents.managers.research_manager import ResearchManager
-from ..config.config_manager import ConfigManager
+from ..config.exchange_config import ExchangeConfig
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class CryptoTradingGraph:
         """
         self.config = config
         self.debug = debug
-        self.config_manager = ConfigManager(config)
+        self.config_manager = ExchangeConfig()
         
         # 初始化智能体
         self._initialize_agents()

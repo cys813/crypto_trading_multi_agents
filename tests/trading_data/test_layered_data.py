@@ -7,8 +7,8 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from data_sources.exchange_data_sources import ExchangeManager, BinanceDataSource
-from database.models import layered_data_storage
+from src.data_sources.exchange_data_sources import ExchangeManager, BinanceDataSource
+from src.database.models import layered_data_storage
 from datetime import datetime, timedelta
 import json
 import time

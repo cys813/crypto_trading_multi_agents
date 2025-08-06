@@ -60,9 +60,9 @@ def run_crypto_analysis(
         
         # 导入代理系统
         try:
-            from crypto_trading_agents.agents.trader.crypto_trader import CryptoTrader
-            from crypto_trading_agents.agents.utils.agent_states import AgentStateManager
-            from crypto_trading_agents.agents.utils.agent_utils import AgentUtils
+            from src.crypto_trading_agents.agents.trader.crypto_trader import CryptoTrader
+            from src.crypto_trading_agents.agents.utils.agent_states import AgentStateManager
+            from src.crypto_trading_agents.agents.utils.agent_utils import AgentUtils
         except ImportError as e:
             logger.error(f"❌ [导入错误] 无法导入代理系统: {e}")
             raise ImportError(f"代理系统导入失败: {e}")

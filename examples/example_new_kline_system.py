@@ -4,9 +4,9 @@
 演示如何使用新的多时间周期K线数据结构和分析方法
 """
 
-from crypto_trading_agents.services.kline_data_service import KlineDataService
-from crypto_trading_agents.agents.researchers.bull_researcher import BullResearcher
-from crypto_trading_agents.agents.researchers.bear_researcher import BearResearcher
+from src.crypto_trading_agents.services.kline_data_service import KlineDataService
+from src.crypto_trading_agents.agents.researchers.bull_researcher import BullResearcher
+from src.crypto_trading_agents.agents.researchers.bear_researcher import BearResearcher
 from datetime import datetime
 import json
 

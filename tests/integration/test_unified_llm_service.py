@@ -193,7 +193,7 @@ class MockLLMAdapter:
 
 def patch_llm_service_for_testing():
     """为测试修补LLM服务"""
-    from crypto_trading_agents.services.llm_service import llm_service
+    from src.crypto_trading_agents.services.llm_service import llm_service
     
     # 清空现有适配器
     llm_service.llm_adapters = {}
@@ -214,7 +214,7 @@ def test_llm_service_basic_functionality():
     print("=" * 60)
     
     try:
-        from crypto_trading_agents.services.llm_service import llm_service
+        from src.crypto_trading_agents.services.llm_service import llm_service
         
         # 修补服务用于测试
         patch_llm_service_for_testing()
@@ -250,7 +250,7 @@ def test_ai_analysis_mixin():
     print("=" * 60)
     
     try:
-        from crypto_trading_agents.services.ai_analysis_mixin import StandardAIAnalysisMixin
+        from src.crypto_trading_agents.services.ai_analysis_mixin import StandardAIAnalysisMixin
         
         # 创建测试类
         class TestAnalyst(StandardAIAnalysisMixin):
@@ -307,7 +307,7 @@ def test_ai_analysis_mixin():
 def test_analyst_integration(analyst_class, analyst_name, test_data):
     """测试分析师集成"""
     try:
-        from crypto_trading_agents.config.ai_analysis_config import get_unified_llm_service_config
+        from src.crypto_trading_agents.config.ai_analysis_config import get_unified_llm_service_config
         
         print(f"\n📊 测试{analyst_name}集成")
         print("-" * 40)
@@ -359,7 +359,7 @@ def test_all_analysts_integration():
     
     # 测试OnchainAnalyst
     try:
-        from crypto_trading_agents.agents.analysts.onchain_analyst import OnchainAnalyst
+        from src.crypto_trading_agents.agents.analysts.onchain_analyst import OnchainAnalyst
         onchain_data = {
             "active_addresses": {"daily_active": 920000},
             "transaction_metrics": {"daily_transactions": 1380000},
@@ -375,7 +375,7 @@ def test_all_analysts_integration():
     
     # 测试SentimentAnalyst
     try:
-        from crypto_trading_agents.agents.analysts.sentiment_analyst import SentimentAnalyst
+        from src.crypto_trading_agents.agents.analysts.sentiment_analyst import SentimentAnalyst
         sentiment_data = {
             "twitter_sentiment": {"positive_ratio": 0.65},
             "reddit_sentiment": {"sentiment_score": 0.7},
@@ -390,7 +390,7 @@ def test_all_analysts_integration():
     
     # 测试DefiAnalyst
     try:
-        from crypto_trading_agents.agents.analysts.defi_analyst import DefiAnalyst
+        from src.crypto_trading_agents.agents.analysts.defi_analyst import DefiAnalyst
         defi_data = {
             "protocol_data": {"total_tvl": 45000000000},
             "liquidity_pools": {"top_pools": []},
@@ -405,7 +405,7 @@ def test_all_analysts_integration():
     
     # 测试BullResearcher
     try:
-        from crypto_trading_agents.agents.researchers.bull_researcher import BullResearcher
+        from src.crypto_trading_agents.agents.researchers.bull_researcher import BullResearcher
         bull_data = {
             "price_momentum_data": {"trend_strength": 0.8},
             "volume_analysis": {"volume_increase": 0.25},
@@ -420,7 +420,7 @@ def test_all_analysts_integration():
     
     # 测试BearResearcher
     try:
-        from crypto_trading_agents.agents.researchers.bear_researcher import BearResearcher
+        from src.crypto_trading_agents.agents.researchers.bear_researcher import BearResearcher
         bear_data = {
             "price_decline_data": {"decline_strength": 0.7},
             "volume_analysis": {"selling_pressure": 0.6},

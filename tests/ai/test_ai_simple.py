@@ -18,7 +18,7 @@ def test_basic_config():
         project_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../..')
         sys.path.insert(0, project_root)
         
-        from crypto_trading_agents.config.ai_analysis_config import get_config_template
+        from src.crypto_trading_agents.config.ai_analysis_config import get_config_template
         
         # 测试不同配置模板
         templates = ["traditional", "dashscope", "deepseek", "ai_enhanced"]
@@ -44,8 +44,8 @@ def test_ai_analyzer_init():
     print("=" * 50)
     
     try:
-        from crypto_trading_agents.agents.analysts.ai_technical_analyzer import AITechnicalAnalyzer
-        from crypto_trading_agents.config.ai_analysis_config import get_config_template
+        from src.crypto_trading_agents.agents.analysts.ai_technical_analyzer import AITechnicalAnalyzer
+        from src.crypto_trading_agents.config.ai_analysis_config import get_config_template
         
         # 测试不同配置的初始化
         configs = [
@@ -78,8 +78,8 @@ def test_prompt_generation():
     print("=" * 50)
     
     try:
-        from crypto_trading_agents.agents.analysts.ai_technical_analyzer import AITechnicalAnalyzer
-        from crypto_trading_agents.config.ai_analysis_config import get_config_template
+        from src.crypto_trading_agents.agents.analysts.ai_technical_analyzer import AITechnicalAnalyzer
+        from src.crypto_trading_agents.config.ai_analysis_config import get_config_template
         
         # 使用传统配置（禁用AI但可以测试prompt生成逻辑）
         config = get_config_template("traditional")

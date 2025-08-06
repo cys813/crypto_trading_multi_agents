@@ -44,8 +44,9 @@ crypto_trading_agents/
 │   │   ├── risk_managers/         # 风险管理代理
 │   │   └── traders/               # 交易员代理
 │   ├── config/                    # 配置文件
-│   ├── data_sources/              # 数据源实现
-│   ├── database/                  # 数据库模型和工具
+│   ├── src/
+│   │   ├── data_sources/          # 数据源实现
+│   │   └── database/              # 数据库模型和工具
 │   ├── llm/                       # 大语言模型适配器
 │   ├── tools/                     # 工具函数
 │   ├── web/                       # Web界面
@@ -273,8 +274,9 @@ crypto_trading_agents/
 │   ├── managers/   # 管理器代理
 │   └── utils/      # 代理工具
 ├── config/         # 配置管理
-├── data_sources/   # 数据源实现
-├── database/       # 数据库模型
+├── src/
+│   ├── data_sources/   # 数据源实现
+│   └── database/       # 数据库模型
 ├── llm/           # LLM适配器
 ├── tools/         # 工具函数
 ├── web/           # Web界面
@@ -288,7 +290,7 @@ crypto_trading_agents/
 4. 注册到系统中
 
 ### 添加新的数据源
-1. 在 `data_sources/` 目录下创建数据源文件
+1. 在 `src/data_sources/` 目录下创建数据源文件
 2. 继承基础数据源类
 3. 实现API接口
 4. 注册到数据源管理器

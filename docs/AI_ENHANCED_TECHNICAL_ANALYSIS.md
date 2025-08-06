@@ -72,7 +72,7 @@ config = {
 ### 配置模板
 
 ```python
-from crypto_trading_agents.config.ai_analysis_config import get_config_template
+from src.crypto_trading_agents.config.ai_analysis_config import get_config_template
 
 # AI增强配置
 config = get_config_template("ai_enhanced")
@@ -104,8 +104,8 @@ pip install numpy
 ### 2. 基本使用
 
 ```python
-from crypto_trading_agents.agents.analysts.technical_analyst import TechnicalAnalyst
-from crypto_trading_agents.config.ai_analysis_config import get_config_template
+from src.crypto_trading_agents.agents.analysts.technical_analyst import TechnicalAnalyst
+from src.crypto_trading_agents.config.ai_analysis_config import get_config_template
 
 # 创建配置
 config = get_config_template("dashscope")

@@ -17,7 +17,7 @@ def test_technical_analyst():
     
     try:
         # 导入技术分析师
-        from crypto_trading_agents.crypto_trading_agents.agents.analysts.technical_analyst import TechnicalAnalyst
+        from src.crypto_trading_agents.agents.analysts.technical_analyst import TechnicalAnalyst
         
         # 创建测试配置
         config = {
@@ -135,7 +135,7 @@ def test_layered_indicators():
     print("\n测试分层技术指标计算...")
     
     try:
-        from crypto_trading_agents.crypto_trading_agents.agents.analysts.technical_analyst import TechnicalAnalyst
+        from src.crypto_trading_agents.agents.analysts.technical_analyst import TechnicalAnalyst
         
         config = {
             "layered_data_config": {"enabled": True}

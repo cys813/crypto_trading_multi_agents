@@ -50,8 +50,8 @@ export BINANCE_API_SECRET="your_api_secret"
 ### 3. 基本使用
 
 ```python
-from crypto_trading_agents.utils.exchange_setup import initialize_exchanges
-from crypto_trading_agents.data_sources.exchange_data_sources import exchange_manager
+from src.crypto_trading_agents.utils.exchange_setup import initialize_exchanges
+from src.data_sources.exchange_data_sources import exchange_manager
 
 # 初始化交易所
 initialize_exchanges()
@@ -76,7 +76,7 @@ print(f"卖单数量: {len(order_book['asks'])}")
 
 #### 自动初始化
 ```python
-from crypto_trading_agents.utils.exchange_setup import initialize_exchanges
+from src.crypto_trading_agents.utils.exchange_setup import initialize_exchanges
 
 # 自动设置所有交易所
 results = initialize_exchanges()
@@ -85,7 +85,7 @@ print(f"成功设置 {len(results['success'])} 个交易所")
 
 #### 手动设置
 ```python
-from crypto_trading_agents.data_sources.exchange_data_sources import (
+from src.data_sources.exchange_data_sources import (
     BinanceDataSource, exchange_manager
 )
 
@@ -145,7 +145,7 @@ print(f"价差: {depth['spread']}")
 
 #### 4. 技术分析师集成
 ```python
-from crypto_trading_agents.agents.analysts.technical_analyst import TechnicalAnalyst
+from src.crypto_trading_agents.agents.analysts.technical_analyst import TechnicalAnalyst
 
 # 创建技术分析师
 config = {
@@ -303,7 +303,7 @@ export LOG_LEVEL=DEBUG
 
 #### 检查交易所状态
 ```python
-from crypto_trading_agents.utils.exchange_setup import exchange_setup
+from src.crypto_trading_agents.utils.exchange_setup import exchange_setup
 
 status = exchange_setup.get_exchange_status()
 for name, info in status.items():
@@ -352,7 +352,7 @@ for symbol in symbols:
 
 ### 添加新交易所
 ```python
-from crypto_trading_agents.data_sources.exchange_data_sources import ExchangeDataSource
+from src.data_sources.exchange_data_sources import ExchangeDataSource
 
 class NewExchangeDataSource(ExchangeDataSource):
     def __init__(self, api_key=None, api_secret=None):

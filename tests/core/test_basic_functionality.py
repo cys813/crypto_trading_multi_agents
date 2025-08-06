@@ -13,11 +13,11 @@ def test_import():
         sys.path.insert(0, os.path.join(os.getcwd(), 'crypto_trading_agents'))
         
         # 测试交易所管理器导入
-        from data_sources.exchange_data_sources import ExchangeManager
+        from src.data_sources.exchange_data_sources import ExchangeManager
         print("✅ ExchangeManager 导入成功")
         
         # 测试分层数据存储导入
-        from database.models import layered_data_storage
+        from src.database.models import layered_data_storage
         print("✅ layered_data_storage 导入成功")
         
         return True
@@ -34,7 +34,7 @@ def test_exchange_manager():
     try:
         sys.path.insert(0, os.path.join(os.getcwd(), 'crypto_trading_agents'))
         
-        from data_sources.exchange_data_sources import ExchangeManager
+        from src.data_sources.exchange_data_sources import ExchangeManager
         
         # 创建交易所管理器实例
         manager = ExchangeManager()

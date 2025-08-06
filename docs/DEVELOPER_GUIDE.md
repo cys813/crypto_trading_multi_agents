@@ -117,11 +117,12 @@ crypto_trading_agents/
 │   │   ├── researchers/           # 研究员代理
 │   │   └── utils/                 # 代理工具
 │   ├── config/                    # 配置管理
-│   ├── data_sources/              # 数据源实现
+│   ├── src/
+│   │   ├── data_sources/          # 数据源实现
 │   │   ├── crypto_data_sources.py
 │   │   ├── exchange_data_sources.py
 │   │   └── __init__.py
-│   ├── database/                  # 数据库模型
+│   │   └── database/              # 数据库模型
 │   │   ├── models.py
 │   │   ├── utils.py
 │   │   └── __init__.py
@@ -238,7 +239,7 @@ def get_available_agents():
 
 #### 1. 创建数据源文件
 ```python
-# data_sources/new_data_source.py
+# src/data_sources/new_data_source.py
 from .crypto_data_sources import BaseDataSource
 import requests
 
@@ -261,7 +262,7 @@ class NewDataSource(BaseDataSource):
 
 #### 2. 注册数据源
 ```python
-# data_sources/__init__.py
+# src/data_sources/__init__.py
 from .new_data_source import NewDataSource
 
 # 添加到数据源管理器
@@ -305,7 +306,7 @@ def main():
 ```python
 # tests/test_new_analyst.py
 import pytest
-from crypto_trading_agents.agents.analysts.new_analyst import NewAnalyst
+from src.crypto_trading_agents.agents.analysts.new_analyst import NewAnalyst
 
 @pytest.fixture
 def analyst():
@@ -343,7 +344,7 @@ pytest --cov=crypto_trading_agents --cov-report=html
 ```python
 # tests/test_data_sources.py
 import pytest
-from crypto_trading_agents.data_sources import data_source_manager
+from src.data_sources import data_source_manager
 
 def test_price_data():
     """测试价格数据获取"""
@@ -355,7 +356,7 @@ def test_price_data():
 #### 测试Web界面
 ```python
 # tests/test_web_app.py
-from crypto_trading_agents.web.app import main
+from src.crypto_trading_agents.web.app import main
 
 def test_web_app():
     """测试Web应用"""

@@ -49,7 +49,7 @@ def main():
         sys.argv = [
             "streamlit",
             "run",
-            str(project_root / "web" / "app.py"),
+            str(project_root / "src" / "web" / "app.py"),
             "--server.port=8501",
             "--server.address=0.0.0.0",
             "--server.headless=true",

@@ -12,10 +12,10 @@ from datetime import datetime, timedelta
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from crypto_trading_agents.crypto_trading_agents.services.trading_data_service import TradingDataService
-from crypto_trading_agents.crypto_trading_agents.agents.analysts.technical_analyst import TechnicalAnalyst
-from crypto_trading_agents.crypto_trading_agents.agents.researchers.bull_researcher import BullResearcher
-from crypto_trading_agents.crypto_trading_agents.agents.researchers.bear_researcher import BearResearcher
+from src.crypto_trading_agents.services.trading_data_service import TradingDataService
+from src.crypto_trading_agents.agents.analysts.technical_analyst import TechnicalAnalyst
+from src.crypto_trading_agents.agents.researchers.bull_researcher import BullResearcher
+from src.crypto_trading_agents.agents.researchers.bear_researcher import BearResearcher
 
 def test_trading_data_service():
     """测试交易数据服务"""

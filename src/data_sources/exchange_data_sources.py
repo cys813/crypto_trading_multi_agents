@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 from .crypto_data_sources import BaseDataSource
 from enum import Enum
-from crypto_trading_agents.database.models import layered_data_storage
+from src.database.models import layered_data_storage
 
 
 class TimeGranularity(Enum):

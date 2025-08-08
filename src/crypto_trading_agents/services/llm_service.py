@@ -18,6 +18,7 @@ class LLMProvider(Enum):
     """LLM提供商枚举"""
     DASHSCOPE = "dashscope"
     DEEPSEEK = "deepseek"
+    ZHIPUAI = "zhipuai"
 
 
 class LLMService:
@@ -68,8 +69,11 @@ class LLMService:
             self.config = config
             self.default_provider = config.get("default_provider", "dashscope")
             
-            # 初始化各个提供商的适配器
+            # 首先尝试从顶层providers获取，如果不存在则从service_config.providers获取
             providers_config = config.get("providers", {})
+            if not providers_config:
+                service_config = config.get("service_config", {})
+                providers_config = service_config.get("providers", {})
             
             for provider_name, provider_config in providers_config.items():
                 if self._is_provider_available(provider_name, provider_config):
@@ -119,6 +123,8 @@ class LLMService:
                 return self._create_dashscope_adapter(provider_config)
             elif provider_name == "deepseek":
                 return self._create_deepseek_adapter(provider_config)
+            elif provider_name == "zhipuai":
+                return self._create_zhipuai_adapter(provider_config)
             else:
                 logger.error(f"不支持的LLM提供商: {provider_name}")
                 return None
@@ -243,6 +249,65 @@ class LLMService:
             return None
         except Exception as e:
             logger.error(f"创建DeepSeek适配器失败: {str(e)}")
+            return None
+
+    def _create_zhipuai_adapter(self, config: Dict[str, Any]):
+        """创建智谱AI适配器"""
+        try:
+            import openai
+            
+            api_key = config.get("api_key") or os.getenv("ZHIPUAI_API_KEY")
+            if not api_key:
+                raise ValueError("智谱AI API密钥未配置")
+            
+            class ZhipuAIAdapter:
+                def __init__(self, model, temperature, max_tokens, api_key):
+                    self.model = model
+                    self.temperature = temperature
+                    self.max_tokens = max_tokens
+                    self.client = openai.OpenAI(
+                        api_key=api_key,
+                        base_url="https://open.bigmodel.cn/api/paas/v4"
+                    )
+                
+                def call(self, prompt: str, **kwargs) -> str:
+                    """调用智谱AI API"""
+                    try:
+                        response = self.client.chat.completions.create(
+                            model=self.model,
+                            messages=[
+                                {"role": "user", "content": prompt}
+                            ],
+                            temperature=kwargs.get("temperature", self.temperature),
+                            max_tokens=kwargs.get("max_tokens", self.max_tokens)
+                        )
+                        
+                        return response.choices[0].message.content
+                        
+                    except Exception as e:
+                        logger.error(f"智谱AI API调用失败: {str(e)}")
+                        raise
+                
+                def get_info(self):
+                    return {
+                        "provider": "zhipuai",
+                        "model": self.model,
+                        "temperature": self.temperature,
+                        "max_tokens": self.max_tokens
+                    }
+            
+            return ZhipuAIAdapter(
+                model=config.get("model", "glm-4.5-flash"),
+                temperature=config.get("temperature", 0.1),
+                max_tokens=config.get("max_tokens", 2000),
+                api_key=api_key
+            )
+            
+        except ImportError:
+            logger.error("OpenAI库未安装，请运行: pip install openai")
+            return None
+        except Exception as e:
+            logger.error(f"创建智谱AI适配器失败: {str(e)}")
             return None
     
     def call_llm(self, prompt: str, provider: Optional[str] = None, **kwargs) -> str:

@@ -19,6 +19,9 @@ sys.path.insert(0, project_root)
 from ...services.ai_analysis_mixin import StandardAIAnalysisMixin
 from ...services.llm_service import initialize_llm_service
 
+# 导入链上数据服务
+from ...services.onchain_data.onchain_data_service import OnchainDataService
+
 logger = logging.getLogger(__name__)
 
 class OnchainAnalyst(StandardAIAnalysisMixin):
@@ -46,6 +49,9 @@ class OnchainAnalyst(StandardAIAnalysisMixin):
         
         # 初始化AI分析混入类
         super().__init__()
+        
+        # 初始化链上数据服务
+        self.onchain_data_service = OnchainDataService(config)
         
         # 初始化LLM服务（如果还未初始化）
         llm_service_config = config.get("llm_service_config")
@@ -112,6 +118,36 @@ class OnchainAnalyst(StandardAIAnalysisMixin):
         except Exception as e:
             logger.error(f"Error analyzing onchain data: {str(e)}")
             return {"error": str(e)}
+
+    async def run(self, symbol: str = "BTC/USDT", timeframe: str = "1d") -> Dict[str, Any]:
+        """
+        统一对外接口函数，执行完整的链上数据分析流程
+        
+        Args:
+            symbol: 交易对符号，如 'BTC/USDT'
+            timeframe: 时间周期，如 '1d', '4h', '1h'
+            
+        Returns:
+            Dict[str, Any]: 完整的分析结果
+        """
+        try:
+            # 步骤1：收集数据
+            collected_data = await self.collect_data(symbol, timeframe)
+            
+            # 步骤2：执行分析
+            analysis_result = await self.analyze(collected_data)
+            
+            return analysis_result
+            
+        except Exception as e:
+            logger.error(f"OnchainAnalyst run失败: {e}")
+            return {
+                'error': str(e),
+                'status': 'failed',
+                'symbol': symbol,
+                'timeframe': timeframe,
+                'analysis_type': 'onchain'
+            }
 
     def _traditional_analyze(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -310,97 +346,147 @@ class OnchainAnalyst(StandardAIAnalysisMixin):
             "MATIC": "polygon",
             "AVAX": "avalanche",
             "DOT": "polkadot",
+            "TON": "ton",
         }
         return chain_mapping.get(currency, "ethereum")
     
     def _collect_active_addresses(self, currency: str, chain: str, end_date: str) -> Dict[str, Any]:
         """收集活跃地址数据"""
-        # TODO: 实现真实数据收集
-        return {
-            "daily_active": 850000,
-            "weekly_active": 3200000,
-            "monthly_active": 8500000,
-            "growth_rate_7d": 0.05,
-            "growth_rate_30d": 0.12,
-            "historical_avg": 750000,
-            "percentile": 75,
-        }
+        try:
+            # 使用真实的链上数据服务获取数据
+            return self.onchain_data_service.get_active_addresses(currency, chain, end_date)
+        except Exception as e:
+            logger.error(f"Failed to collect active addresses data: {str(e)}")
+            # 回退到模拟数据
+            return {
+                "daily_active": 850000,
+                "weekly_active": 3200000,
+                "monthly_active": 8500000,
+                "growth_rate_7d": 0.05,
+                "growth_rate_30d": 0.12,
+                "historical_avg": 750000,
+                "percentile": 75,
+                "source": "fallback_mock"
+            }
     
     def _collect_transaction_metrics(self, currency: str, chain: str, end_date: str) -> Dict[str, Any]:
         """收集交易指标数据"""
-        return {
-            "daily_transactions": 1250000,
-            "average_fee": 15.5,
-            "total_fees": 19375000,
-            "large_transactions": 1250,
-            "transaction_growth": 0.08,
-            "fee_trend": "increasing",
-        }
+        try:
+            # 使用真实的链上数据服务获取数据
+            return self.onchain_data_service.get_transaction_metrics(currency, chain, end_date)
+        except Exception as e:
+            logger.error(f"Failed to collect transaction metrics data: {str(e)}")
+            # 回退到模拟数据
+            return {
+                "daily_transactions": 1250000,
+                "average_fee": 15.5,
+                "total_fees": 19375000,
+                "large_transactions": 1250,
+                "transaction_growth": 0.08,
+                "fee_trend": "increasing",
+                "source": "fallback_mock"
+            }
     
     def _collect_exchange_flows(self, currency: str, chain: str, end_date: str) -> Dict[str, Any]:
         """收集交易所流量数据"""
-        return {
-            "exchange_inflows": 15000,
-            "exchange_outflows": 12000,
-            "net_flow": -3000,  # 净流出
-            "inflow_trend": "decreasing",
-            "outflow_trend": "increasing",
-            "exchange_balance": 2500000,
-            "balance_change_24h": -0.12,
-        }
+        try:
+            # 使用真实的链上数据服务获取数据
+            return self.onchain_data_service.get_exchange_flows(currency, chain, end_date)
+        except Exception as e:
+            logger.error(f"Failed to collect exchange flows data: {str(e)}")
+            # 回退到模拟数据
+            return {
+                "exchange_inflows": 15000,
+                "exchange_outflows": 12000,
+                "net_flow": -3000,  # 净流出
+                "inflow_trend": "decreasing",
+                "outflow_trend": "increasing",
+                "exchange_balance": 2500000,
+                "balance_change_24h": -0.12,
+                "source": "fallback_mock"
+            }
     
     def _collect_whale_activity(self, currency: str, chain: str, end_date: str) -> Dict[str, Any]:
         """收集巨鲸活动数据"""
-        return {
-            "whale_transactions": 45,
-            "whale_inflows": 8000,
-            "whale_outflows": 6500,
-            "net_whale_flow": -1500,
-            "whale_concentration": 0.62,
-            "large_holder_count": 8500,
-            "accumulation_pattern": True,
-        }
+        try:
+            # 使用真实的链上数据服务获取数据
+            return self.onchain_data_service.get_whale_activity(currency, chain, end_date)
+        except Exception as e:
+            logger.error(f"Failed to collect whale activity data: {str(e)}")
+            # 回退到模拟数据
+            return {
+                "whale_transactions": 45,
+                "whale_inflows": 8000,
+                "whale_outflows": 6500,
+                "net_whale_flow": -1500,
+                "whale_concentration": 0.62,
+                "large_holder_count": 8500,
+                "accumulation_pattern": True,
+                "source": "fallback_mock"
+            }
     
     def _collect_network_health(self, currency: str, chain: str, end_date: str) -> Dict[str, Any]:
         """收集网络健康数据"""
-        if currency == "BTC":
-            return {
-                "hash_rate": 450000000000000,  # 450 EH/s
-                "difficulty": 72000000000000,
-                "mining_revenue": 35000000,
-                "network_nodes": 15000,
-                "network_uptime": 0.9999,
-            }
-        else:
-            return {
-                "active_validators": 850000,
-                "staking_rate": 0.15,
-                "network_nodes": 8500,
-                "gas_usage": 0.75,
-                "network_uptime": 0.9995,
-            }
+        try:
+            # 使用真实的链上数据服务获取数据
+            return self.onchain_data_service.get_network_health(currency, chain, end_date)
+        except Exception as e:
+            logger.error(f"Failed to collect network health data: {str(e)}")
+            # 回退到模拟数据
+            if currency == "BTC":
+                return {
+                    "hash_rate": 450000000000000,  # 450 EH/s
+                    "difficulty": 72000000000000,
+                    "mining_revenue": 35000000,
+                    "network_nodes": 15000,
+                    "network_uptime": 0.9999,
+                    "source": "fallback_mock"
+                }
+            else:
+                return {
+                    "active_validators": 850000,
+                    "staking_rate": 0.15,
+                    "network_nodes": 8500,
+                    "gas_usage": 0.75,
+                    "network_uptime": 0.9995,
+                    "source": "fallback_mock"
+                }
     
     def _collect_defi_metrics(self, currency: str, chain: str, end_date: str) -> Dict[str, Any]:
         """收集DeFi指标数据"""
-        return {
-            "tvl": 25000000000,  # 250亿美元
-            "defi_users": 4500000,
-            "protocol_count": 350,
-            "lending_volume": 850000000,
-            "dex_volume": 1200000000,
-            "yield_farming_tvl": 8500000000,
-        }
+        try:
+            # 使用真实的链上数据服务获取数据
+            return self.onchain_data_service.get_defi_metrics(currency, chain, end_date)
+        except Exception as e:
+            logger.error(f"Failed to collect DeFi metrics data: {str(e)}")
+            # 回退到模拟数据
+            return {
+                "tvl": 25000000000,  # 250亿美元
+                "defi_users": 4500000,
+                "protocol_count": 350,
+                "lending_volume": 850000000,
+                "dex_volume": 1200000000,
+                "yield_farming_tvl": 8500000000,
+                "source": "fallback_mock"
+            }
     
     def _collect_holder_distribution(self, currency: str, chain: str, end_date: str) -> Dict[str, Any]:
         """收集持币分布数据"""
-        return {
-            "top_10_holders": 0.15,
-            "top_100_holders": 0.35,
-            "retail_holders": 0.65,
-            "holder_growth": 0.08,
-            "average_balance": 0.85,
-            "gini_coefficient": 0.72,
-        }
+        try:
+            # 使用真实的链上数据服务获取数据
+            return self.onchain_data_service.get_holder_distribution(currency, chain, end_date)
+        except Exception as e:
+            logger.error(f"Failed to collect holder distribution data: {str(e)}")
+            # 回退到模拟数据
+            return {
+                "top_10_holders": 0.15,
+                "top_100_holders": 0.35,
+                "retail_holders": 0.65,
+                "holder_growth": 0.08,
+                "average_balance": 0.85,
+                "gini_coefficient": 0.72,
+                "source": "fallback_mock"
+            }
     
     def _analyze_active_addresses(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """分析活跃地址"""

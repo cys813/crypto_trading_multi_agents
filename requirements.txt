@@ -117,7 +117,7 @@ orjson>=3.9.0
 msgpack>=1.0.5
 
 # Network tools
-socketio>=5.9.0
+python-socketio>=5.9.0
 websocket-client>=1.6.0
 
 # Financial calculations
@@ -125,14 +125,47 @@ numpy-financial>=1.0.0
 TA-Lib>=0.4.28
 
 # Machine learning (optional)
-tensorflow>=2.13.0
-torch>=2.1.0
+# tensorflow>=2.13.0
+# torch>=2.1.0
 transformers>=4.35.0
 
 # Natural language processing
 nltk>=3.8.0
 spacy>=3.7.0
 textblob>=0.17.1
+vaderSentiment>=3.3.2
+
+# News API
+newsapi-python>=0.2.7
+
+# Twitter API 相关
+tweepy>=4.14.0
+
+# 免费社交媒体和新闻替代方案
+twikit>=1.7.0
+twscrape>=0.10.0
+snscrape>=0.7.0
+
+# Reddit数据源
+praw>=7.7.0
+
+# 新闻数据源
+gnews>=0.3.7
+feedparser>=6.0.10
+
+# Telegram数据源
+pyrogram>=2.0.106
+python-telegram-bot>=20.0
+
+# YouTube相关
+yt-dlp>=2024.1.4
+
+# Telegram API
+python-telegram-bot>=20.0
+
+# Google API
+google-api-python-client>=2.80.0
+
 
 # Time series
 pandas-ta>=0.3.14b0
@@ -189,26 +222,20 @@ alembic>=1.12.0
 docker-compose>=1.29.0
 
 # Monitoring
-grafana>=10.2.0
-prometheus>=2.47.0
 
 # Log aggregation
 elasticsearch>=8.10.0
-logstash>=8.10.0
-kibana>=8.10.0
 
 # Alerting
 alertmanager>=0.26.0
 
 # Backup
-restic>=0.16.0
 duplicity>=1.2.0
 
 # Performance testing
 locust>=2.17.0
 
 # Security scanning
-owasp-zap>=2.13.0
 clair>=4.5.0
 
 # Dependency management

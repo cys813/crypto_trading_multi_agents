@@ -7,10 +7,12 @@
 from typing import Dict, Any, List
 import logging
 
+from src.crypto_trading_agents.services.ai_analysis_mixin import StandardAIAnalysisMixin
+
 logger = logging.getLogger(__name__)
 
-class ConservativeDebator:
-    """加密货币保守辩论者"""
+class ConservativeDebator(StandardAIAnalysisMixin):
+    """加密货币保守辩论员"""
     
     def __init__(self, config: Dict[str, Any]):
         """
@@ -22,211 +24,241 @@ class ConservativeDebator:
         self.config = config
         self.risk_tolerance = config.get("risk_config", {}).get("conservative_tolerance", 0.2)
         
-    def analyze(self, state: Dict[str, Any]) -> Dict[str, Any]:
+        # 初始化AI分析混入类
+        super().__init__()
+        
+        # 初始化LLM服务（如果还未初始化）
+        llm_service_config = config.get("llm_service_config")
+        if llm_service_config:
+            try:
+                from src.crypto_trading_agents.services.unified_llm_service import initialize_llm_service
+                initialize_llm_service(llm_service_config)
+                logger.info("ConservativeDebator: 统一LLM服务初始化完成")
+            except ImportError:
+                logger.warning("ConservativeDebator: 无法导入LLM服务，将使用纯规则分析")
+    
+    def use_ai_enhanced_analysis(self) -> bool:
+        """检查是否使用AI增强分析"""
+        return self.is_ai_enabled()
+    
+    def _analyze_with_ai(self, prompt: str) -> Dict[str, Any]:
+        """使用AI进行分析"""
+        try:
+            response = self.call_ai_analysis(prompt)
+            return self.parse_ai_json_response(response, {})
+        except Exception as e:
+            logger.error(f"ConservativeDebator AI分析失败: {e}")
+            return {"ai_error": str(e)}
+    
+    def analyze(self, market_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        分析风险状况（保守视角）
+        分析市场数据，提供保守型观点
         
         Args:
-            state: 当前状态
+            market_data: 市场数据
             
         Returns:
-            保守风险分析结果
+            分析结果
         """
         try:
-            # 获取基础分析报告
-            market_report = state.get("market_report", "")
-            sentiment_report = state.get("sentiment_report", "")
-            news_report = state.get("news_report", "")
-            fundamentals_report = state.get("fundamentals_report", "")
+            # 基础风险评估
+            risk_analysis = self._assess_market_risk(market_data)
             
-            # 获取当前投资计划
-            investment_plan = state.get("investment_plan", "")
+            # 构建保守型分析提示
+            prompt = self._build_conservative_analysis_prompt(risk_analysis, market_data)
             
-            # 保守风险分析
-            risk_analysis = self._analyze_conservative_risks(
-                market_report, sentiment_report, news_report, fundamentals_report
-            )
+            # 使用AI增强分析（如果启用）
+            if self.use_ai_enhanced_analysis():
+                ai_analysis = self._analyze_with_ai(prompt)
+                risk_analysis.update(ai_analysis)
             
-            # 资本保护策略
-            capital_protection = self._generate_capital_protection_strategies(risk_analysis)
-            
-            # 风险规避措施
-            risk_avoidance = self._assess_risk_avoidance_measures(risk_analysis)
-            
-            # 保守投资建议
-            conservative_recommendations = self._generate_conservative_recommendations(
-                risk_analysis, capital_protection, risk_avoidance
-            )
+            # 生成保守型策略建议
+            strategy = self._generate_conservative_strategy(risk_analysis)
             
             return {
-                "risk_analysis": risk_analysis,
-                "capital_protection": capital_protection,
-                "risk_avoidance": risk_avoidance,
-                "conservative_recommendations": conservative_recommendations,
-                "risk_level": "low",
-                "expected_return": "moderate",
-                "confidence": self._calculate_confidence(risk_analysis),
-                "key_observations": self._generate_key_observations(risk_analysis),
+                "debator_type": "conservative",
+                "risk_level": risk_analysis.get("overall_risk", "high"),
+                "confidence": risk_analysis.get("confidence", 0.7),
+                "key_observations": risk_analysis.get("key_observations", []),
+                "conservative_strategies": strategy.get("recommendations", []),
+                "risk_management": strategy.get("risk_management", {}),
+                "expected_return": "low",
+                "analysis_timestamp": risk_analysis.get("timestamp", ""),
+                "market_assessment": risk_analysis.get("market_assessment", {})
             }
             
         except Exception as e:
-            logger.error(f"Error in conservative debator analysis: {str(e)}")
-            return {"error": str(e)}
+            logger.error(f"Error in conservative analysis: {str(e)}")
+            return {
+                "debator_type": "conservative",
+                "risk_level": "high",
+                "confidence": 0.5,
+                "key_observations": [f"Analysis error: {str(e)}"],
+                "conservative_strategies": ["HOLD"],
+                "risk_management": {"stop_loss": "tight"},
+                "expected_return": "low",
+                "analysis_timestamp": "",
+                "market_assessment": {},
+                "error": str(e)
+            }
     
-    def _analyze_conservative_risks(self, market_report: str, sentiment_report: str, 
-                                  news_report: str, fundamentals_report: str) -> Dict[str, Any]:
-        """分析保守风险因素"""
+    def analyze_with_debate_material(self, debate_material: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        使用辩论材料进行分析
         
-        # 模拟保守风险分析
+        Args:
+            debate_material: 辩论材料，包含各种分析报告
+            
+        Returns:
+            分析结果
+        """
+        try:
+            # 提取关键信息
+            market_report = debate_material.get("market_report", "")
+            sentiment_report = debate_material.get("sentiment_report", "")
+            news_report = debate_material.get("news_report", "")
+            fundamentals_report = debate_material.get("fundamentals_report", "")
+            investment_plan = debate_material.get("investment_plan", "")
+            research_summary = debate_material.get("research_summary", {})
+            bull_analysis = debate_material.get("bull_analysis", {})
+            bear_analysis = debate_material.get("bear_analysis", {})
+            technical_analysis = debate_material.get("technical_analysis", {})
+            onchain_analysis = debate_material.get("onchain_analysis", {})
+            sentiment_analysis = debate_material.get("sentiment_analysis", {})
+            market_analysis = debate_material.get("market_analysis", {})
+            defi_analysis = debate_material.get("defi_analysis", {})
+            
+            # 保守型风险评估
+            risk_assessment = self._conservative_risk_assessment({
+                "market_report": market_report,
+                "sentiment_report": sentiment_report,
+                "news_report": news_report,
+                "fundamentals_report": fundamentals_report,
+                "investment_plan": investment_plan,
+                "research_summary": research_summary,
+                "bull_analysis": bull_analysis,
+                "bear_analysis": bear_analysis,
+                "technical_analysis": technical_analysis,
+                "onchain_analysis": onchain_analysis,
+                "sentiment_analysis": sentiment_analysis,
+                "market_analysis": market_analysis,
+                "defi_analysis": defi_analysis
+            })
+            
+            # 构建保守型辩论提示
+            prompt = self._build_conservative_debate_prompt(risk_assessment, debate_material)
+            
+            # 使用AI增强分析（如果启用）
+            if self.use_ai_enhanced_analysis():
+                ai_analysis = self._analyze_with_ai(prompt)
+                risk_assessment.update(ai_analysis)
+            
+            # 生成保守型辩论策略
+            strategy = self._generate_conservative_debate_strategy(risk_assessment)
+            
+            return {
+                "debator_type": "conservative",
+                "risk_level": risk_assessment.get("overall_risk", "high"),
+                "confidence": risk_assessment.get("confidence", 0.8),
+                "key_observations": risk_assessment.get("key_observations", []),
+                "conservative_strategies": strategy.get("recommendations", []),
+                "risk_management": strategy.get("risk_management", {}),
+                "expected_return": "low",
+                "analysis_timestamp": risk_assessment.get("timestamp", ""),
+                "debate_assessment": risk_assessment.get("debate_assessment", {}),
+                "market_outlook": risk_assessment.get("market_outlook", "bearish")
+            }
+            
+        except Exception as e:
+            logger.error(f"Error in conservative debate analysis: {str(e)}")
+            return {
+                "debator_type": "conservative",
+                "risk_level": "high",
+                "confidence": 0.5,
+                "key_observations": [f"Debate analysis error: {str(e)}"],
+                "conservative_strategies": ["HOLD", "REDUCE_POSITION"],
+                "risk_management": {"stop_loss": "very_tight"},
+                "expected_return": "low",
+                "analysis_timestamp": "",
+                "debate_assessment": {},
+                "market_outlook": "bearish",
+                "error": str(e)
+            }
+    
+    def _assess_market_risk(self, market_data: Dict[str, Any]) -> Dict[str, Any]:
+        """评估市场风险"""
+        # 实现保守型风险评估逻辑
         return {
-            "market_volatility": "extreme",
-            "regulatory_uncertainty": "high",
-            "liquidity_risk": "medium",
-            "counterparty_risk": "high",
-            "exchange_risk": "high",
-            "smart_contract_risk": "very_high",
-            "market_manipulation": "common",
-            "black_swan_probability": "elevated",
-            "capital_preservation_priority": "critical",
-            "drawdown_potential": "severe",
-            "recovery_timeline": "uncertain",
-            "systemic_risk": "significant",
+            "overall_risk": "high",
+            "confidence": 0.7,
+            "key_observations": ["Market volatility detected", "Risk factors present"],
+            "timestamp": ""
         }
     
-    def _generate_capital_protection_strategies(self, risk_analysis: Dict[str, Any]) -> List[str]:
-        """生成资本保护策略"""
+    def _build_conservative_analysis_prompt(self, risk_analysis: Dict[str, Any], 
+                                           market_data: Dict[str, Any]) -> str:
+        """构建保守型分析提示"""
+        return f"""
+        作为保守型辩论员，请分析以下市场数据并提供风险评估：
         
-        strategies = []
+        风险分析: {risk_analysis}
+        市场数据: {market_data}
         
-        # 基于波动性的保护策略
-        if risk_analysis.get("market_volatility") == "extreme":
-            strategies.append("大部分资金稳定币保值")
-            strategies.append("小额分散投资")
-            strategies.append("定期再平衡策略")
-        
-        # 基于监管不确定性的保护策略
-        if risk_analysis.get("regulatory_uncertainty") == "high":
-            strategies.append("规避监管灰色地带项目")
-            strategies.append("选择合规交易所")
-            strategies.append("关注政策动向")
-        
-        # 基于智能合约风险的保护策略
-        if risk_analysis.get("smart_contract_risk") == "very_high":
-            strategies.append("选择审计过的项目")
-            strategies.append("避免新合约交互")
-            strategies.append("使用多签钱包")
-        
-        # 基于交易风险的保护策略
-        if risk_analysis.get("exchange_risk") == "high":
-            strategies.append("资金分散存放")
-            strategies.append("冷钱包存储")
-            strategies.append("定期提取资金")
-        
-        # 基于市场操纵的保护策略
-        if risk_analysis.get("market_manipulation") == "common":
-            strategies.append("避免小市值币种")
-            strategies.append("关注大户动向")
-            strategies.append("使用限价单")
-        
-        # 系统性风险保护
-        strategies.append("保持充足现金流")
-        strategies.append("设置严格止损")
-        strategies.append("定期评估投资组合")
-        
-        return strategies
+        请重点关注：
+        1. 下行风险和保护措施
+        2. 资本保全策略
+        3. 最坏情况分析
+        4. 保守型投资建议
+        """
     
-    def _assess_risk_avoidance_measures(self, risk_analysis: Dict[str, Any]) -> Dict[str, Any]:
-        """评估风险规避措施"""
-        
+    def _generate_conservative_strategy(self, risk_analysis: Dict[str, Any]) -> Dict[str, Any]:
+        """生成保守型策略"""
         return {
-            "recommended_allocation": {
-                "stablecoins": "60-70%",
-                "bitcoin": "15-20%",
-                "ethereum": "10-15%",
-                "altcoins": "0-5%",
-                "cash": "5-10%"
+            "recommendations": ["HOLD", "REDUCE_EXPOSURE"],
+            "risk_management": {
+                "stop_loss": "tight",
+                "position_size": "small"
+            }
+        }
+    
+    def _conservative_risk_assessment(self, debate_material: Dict[str, Any]) -> Dict[str, Any]:
+        """保守型风险评估"""
+        return {
+            "overall_risk": "high",
+            "confidence": 0.8,
+            "key_observations": ["Multiple risk factors identified", "Conservative approach recommended"],
+            "timestamp": "",
+            "debate_assessment": {
+                "bull_bear_ratio": "bearish",
+                "sentiment_alignment": "negative"
             },
-            "leverage_usage": "zero_leverage",
-            "stop_loss_strategy": "tight_stops",
-            "position_sizing": "small_positions",
-            "investment_horizon": "long_term",
-            "diversification_level": "high",
-            "monitoring_frequency": "daily",
-            "rebalancing_period": "weekly",
-            "risk_per_trade": "1-2% of portfolio",
+            "market_outlook": "bearish"
         }
     
-    def _generate_conservative_recommendations(self, risk_analysis: Dict[str, Any], 
-                                             protection: List[str], 
-                                             avoidance: Dict[str, Any]) -> List[str]:
-        """生成保守投资建议"""
+    def _build_conservative_debate_prompt(self, risk_assessment: Dict[str, Any], 
+                                        debate_material: Dict[str, Any]) -> str:
+        """构建保守型辩论提示"""
+        return f"""
+        作为保守型辩论员，请基于以下辩论材料提供风险评估：
         
-        recommendations = []
+        风险评估: {risk_assessment}
+        辩论材料: {debate_material}
         
-        # 核心保守建议
-        recommendations.append("建议将70%资金转换为USDT等稳定币")
-        recommendations.append("仅投资比特币和以太坊等主流币种")
-        recommendations.append("完全避免使用杠杆")
-        recommendations.append("设置5%的严格止损")
-        
-        # 基于保护策略的建议
-        if "小额分散投资" in protection:
-            recommendations.append("单笔投资不超过总资金的5%")
-        
-        if "冷钱包存储" in protection:
-            recommendations.append("长期资产转入冷钱包存储")
-        
-        if "资金分散存放" in protection:
-            recommendations.append("在2-3个知名交易所分散资金")
-        
-        # 基于风险规避的建议
-        allocation = avoidance.get("recommended_allocation", {})
-        recommendations.append(f"按以下比例配置: 稳定币{allocation.get('stablecoins', '60%')}, 比特币{allocation.get('bitcoin', '20%')}")
-        
-        # 监控建议
-        recommendations.append("每日监控投资组合")
-        recommendations.append("每周进行一次再平衡")
-        recommendations.append("关注重大新闻和监管动向")
-        
-        # 长期建议
-        recommendations.append("采用定投策略降低成本")
-        recommendations.append("保持耐心，避免频繁交易")
-        recommendations.append("优先考虑资本保值而非高收益")
-        
-        return recommendations
+        请重点关注：
+        1. 各个分析报告中的风险信号
+        2. 研究员观点中的保守因素
+        3. 市场情绪中的负面信号
+        4. 技术分析中的支撑位和阻力位
+        5. 链上数据中的风险指标
+        """
     
-    def _calculate_confidence(self, risk_analysis: Dict[str, Any]) -> float:
-        """计算分析置信度"""
-        
-        # 保守分析通常有较高的置信度
-        regulatory_clarity = 0.3 if risk_analysis.get("regulatory_uncertainty") == "high" else 0.7
-        market_stability = 0.2 if risk_analysis.get("market_volatility") == "extreme" else 0.6
-        
-        return (regulatory_clarity + market_stability) / 2
-    
-    def _generate_key_observations(self, risk_analysis: Dict[str, Any]) -> List[str]:
-        """生成关键观察"""
-        
-        observations = []
-        
-        # 波动性观察
-        volatility = risk_analysis.get("market_volatility", "unknown")
-        observations.append(f"市场波动性: {volatility}")
-        
-        # 监管观察
-        regulatory = risk_analysis.get("regulatory_uncertainty", "unknown")
-        observations.append(f"监管不确定性: {regulatory}")
-        
-        # 智能合约风险观察
-        contract_risk = risk_analysis.get("smart_contract_risk", "unknown")
-        observations.append(f"智能合约风险: {contract_risk}")
-        
-        # 系统性风险观察
-        systemic_risk = risk_analysis.get("systemic_risk", "unknown")
-        observations.append(f"系统性风险: {systemic_risk}")
-        
-        # 黑天鹅概率观察
-        black_swan = risk_analysis.get("black_swan_probability", "unknown")
-        observations.append(f"黑天鹅事件概率: {black_swan}")
-        
-        return observations
+    def _generate_conservative_debate_strategy(self, risk_assessment: Dict[str, Any]) -> Dict[str, Any]:
+        """生成保守型辩论策略"""
+        return {
+            "recommendations": ["HOLD", "REDUCE_POSITION", "INCREASE_CASH"],
+            "risk_management": {
+                "stop_loss": "very_tight",
+                "position_size": "minimal",
+                "hedging": "recommended"
+            }
+        }

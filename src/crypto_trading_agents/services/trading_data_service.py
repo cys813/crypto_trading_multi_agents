@@ -618,3 +618,634 @@ class TradingDataService:
             "supported_timeframes": self.get_supported_timeframes(),
             "api_available": self.exchange_manager is not None
         }
+
+class MarketMicrostructureDataService:
+    """市场微观结构数据服务 - 专门为做市商分析提供深度市场数据"""
+    
+    def __init__(self, config: Dict[str, Any], trading_data_service: TradingDataService):
+        """
+        初始化市场微观结构数据服务
+        
+        Args:
+            config: 配置字典
+            trading_data_service: 基础交易数据服务
+        """
+        self.config = config
+        self.trading_data_service = trading_data_service
+        self.microstructure_config = config.get("microstructure_config", {})
+        
+        # 数据源配置
+        self.data_source = self.microstructure_config.get("data_source", "mock")
+        self.orderbook_depth = self.microstructure_config.get("orderbook_depth", 20)
+        self.tick_data_limit = self.microstructure_config.get("tick_data_limit", 1000)
+        
+        # 缓存配置
+        self.cache = {}
+        self.cache_expiry = self.microstructure_config.get("cache_expiry", 60)  # 1分钟缓存
+        
+        logger.info("市场微观结构数据服务初始化完成")
+    
+    async def collect_market_microstructure_data(self, symbol: str, end_date: str = None) -> Dict[str, Any]:
+        """
+        收集市场微观结构数据
+        
+        Args:
+            symbol: 交易对符号
+            end_date: 截止日期
+            
+        Returns:
+            市场微观结构数据
+        """
+        try:
+            if end_date is None:
+                end_date = datetime.now().strftime("%Y-%m-%d")
+            
+            logger.info(f"收集市场微观结构数据: {symbol}, 截止日期: {end_date}")
+            
+            # 并行获取各类市场微观结构数据
+            orderbook_data = await self._get_orderbook_data(symbol)
+            tick_data = await self._get_tick_data(symbol)
+            volume_profile = await self._get_volume_profile_data(symbol)
+            liquidity_metrics = await self._get_liquidity_metrics(symbol)
+            market_impact_data = await self._get_market_impact_data(symbol)
+            
+            microstructure_data = {
+                "symbol": symbol,
+                "start_date": (datetime.strptime(end_date, "%Y-%m-%d") - timedelta(days=1)).strftime("%Y-%m-%d"),
+                "end_date": end_date,
+                "data_source": self.data_source,
+                "collected_at": datetime.now().isoformat(),
+                "order_book_data": orderbook_data,
+                "tick_data": tick_data,
+                "volume_profile": volume_profile,
+                "liquidity_metrics": liquidity_metrics,
+                "market_impact_data": market_impact_data,
+                "data_quality": self._assess_microstructure_data_quality({
+                    "order_book_data": orderbook_data,
+                    "tick_data": tick_data,
+                    "volume_profile": volume_profile,
+                    "liquidity_metrics": liquidity_metrics,
+                    "market_impact_data": market_impact_data
+                })
+            }
+            
+            logger.info(f"成功收集市场微观结构数据: {symbol}")
+            return microstructure_data
+            
+        except Exception as e:
+            logger.error(f"收集市场微观结构数据失败: {symbol}, {e}")
+            return {"error": str(e)}
+    
+    async def _get_orderbook_data(self, symbol: str) -> Dict[str, Any]:
+        """获取订单簿数据"""
+        try:
+            cache_key = f"orderbook_{symbol}"
+            
+            # 检查缓存
+            if self._is_cache_valid(cache_key):
+                return self.cache[cache_key]["data"]
+            
+            # 尝试从真实数据源获取
+            if self.data_source != "mock":
+                real_data = await self._get_real_orderbook_data(symbol)
+                if real_data:
+                    self._cache_data(cache_key, real_data)
+                    return real_data
+            
+            # 生成模拟数据
+            mock_data = self._generate_mock_orderbook_data(symbol)
+            self._cache_data(cache_key, mock_data)
+            return mock_data
+            
+        except Exception as e:
+            logger.error(f"获取订单簿数据失败: {e}")
+            return self._generate_mock_orderbook_data(symbol)
+    
+    async def _get_real_orderbook_data(self, symbol: str) -> Optional[Dict[str, Any]]:
+        """从真实数据源获取订单簿数据"""
+        try:
+            # 如果有交易所管理器，尝试获取真实数据
+            if hasattr(self.trading_data_service, 'exchange_manager') and self.trading_data_service.exchange_manager:
+                # 这里可以扩展支持不同的交易所API
+                # 目前先返回None，回退到模拟数据
+                pass
+            
+            return None
+            
+        except Exception as e:
+            logger.warning(f"获取真实订单簿数据失败: {e}")
+            return None
+    
+    def _generate_mock_orderbook_data(self, symbol: str) -> Dict[str, Any]:
+        """生成模拟订单簿数据"""
+        base_price = 50000 if "BTC" in symbol else 3000
+        
+        # 生成买单和卖单
+        bids = []
+        asks = []
+        
+        for i in range(self.orderbook_depth):
+            # 买单价格递减，卖单价格递增
+            bid_price = base_price * (1 - 0.001 * (i + 1))
+            ask_price = base_price * (1 + 0.001 * (i + 1))
+            
+            # 数量随深度衰减，添加一些随机性
+            base_quantity = base_price * 0.1 * (1 - i * 0.03)
+            bid_quantity = base_quantity * (0.8 + random.random() * 0.4)
+            ask_quantity = base_quantity * (0.8 + random.random() * 0.4)
+            
+            bids.append({
+                "price": round(bid_price, 2),
+                "quantity": round(bid_quantity, 6),
+                "total": sum(bid["quantity"] for bid in bids) + bid_quantity,
+                "order_count": random.randint(1, 10)
+            })
+            
+            asks.append({
+                "price": round(ask_price, 2),
+                "quantity": round(ask_quantity, 6),
+                "total": sum(ask["quantity"] for ask in asks) + ask_quantity,
+                "order_count": random.randint(1, 10)
+            })
+        
+        # 计算加权中间价
+        best_bid = bids[0]
+        best_ask = asks[0]
+        weighted_mid_price = (best_bid["price"] * best_ask["quantity"] + best_ask["price"] * best_bid["quantity"]) / (best_bid["quantity"] + best_ask["quantity"])
+        
+        return {
+            "bids": bids,
+            "asks": asks,
+            "spread": best_ask["price"] - best_bid["price"],
+            "spread_percentage": (best_ask["price"] - best_bid["price"]) / base_price * 100,
+            "total_bid_depth": sum(bid["quantity"] for bid in bids),
+            "total_ask_depth": sum(ask["quantity"] for ask in asks),
+            "mid_price": (best_bid["price"] + best_ask["price"]) / 2,
+            "weighted_mid_price": weighted_mid_price,
+            "timestamp": datetime.now().isoformat(),
+            "depth_levels": len(bids)
+        }
+    
+    async def _get_tick_data(self, symbol: str) -> Dict[str, Any]:
+        """获取逐笔交易数据"""
+        try:
+            cache_key = f"ticks_{symbol}"
+            
+            if self._is_cache_valid(cache_key):
+                return self.cache[cache_key]["data"]
+            
+            # 尝试获取真实tick数据
+            if self.data_source != "mock":
+                real_data = await self._get_real_tick_data(symbol)
+                if real_data:
+                    self._cache_data(cache_key, real_data)
+                    return real_data
+            
+            # 生成模拟数据
+            mock_data = self._generate_mock_tick_data(symbol)
+            self._cache_data(cache_key, mock_data)
+            return mock_data
+            
+        except Exception as e:
+            logger.error(f"获取逐笔交易数据失败: {e}")
+            return self._generate_mock_tick_data(symbol)
+    
+    async def _get_real_tick_data(self, symbol: str) -> Optional[Dict[str, Any]]:
+        """从真实数据源获取逐笔交易数据"""
+        try:
+            # 这里可以集成真实的tick数据API
+            # 比如WebSocket实时数据或者REST API历史数据
+            return None
+            
+        except Exception as e:
+            logger.warning(f"获取真实tick数据失败: {e}")
+            return None
+    
+    def _generate_mock_tick_data(self, symbol: str) -> Dict[str, Any]:
+        """生成模拟逐笔交易数据"""
+        base_price = 50000 if "BTC" in symbol else 3000
+        trades = []
+        current_time = datetime.now()
+        current_price = base_price
+        
+        # 生成交易数据，模拟真实的价格波动
+        for i in range(self.tick_data_limit):
+            # 价格随机游走
+            price_change = random.gauss(0, base_price * 0.0001)  # 正态分布的价格变化
+            current_price = max(current_price + price_change, base_price * 0.8)  # 防止价格过低
+            
+            # 交易数量
+            quantity = random.uniform(base_price * 0.0001, base_price * 0.01)
+            
+            # 买卖方向，略微倾向于保持趋势
+            side = "buy" if random.random() > 0.5 else "sell"
+            
+            # 交易时间（倒序）
+            trade_time = current_time - timedelta(seconds=i * random.uniform(0.1, 5))
+            
+            trades.append({
+                "timestamp": trade_time.isoformat(),
+                "trade_id": f"T{i+1:06d}",
+                "price": round(current_price, 2),
+                "quantity": round(quantity, 6),
+                "side": side,
+                "taker_side": side,  # 主动方
+                "fee_currency": symbol.split('/')[1],
+                "fee": round(quantity * current_price * 0.001, 4)  # 0.1% 手续费
+            })
+        
+        # 按时间排序（最新的在前）
+        trades.sort(key=lambda x: x["timestamp"], reverse=True)
+        
+        # 计算统计数据
+        total_volume = sum(trade["quantity"] for trade in trades)
+        buy_volume = sum(trade["quantity"] for trade in trades if trade["side"] == "buy")
+        sell_volume = total_volume - buy_volume
+        
+        return {
+            "trades": trades,
+            "total_volume": round(total_volume, 6),
+            "buy_volume": round(buy_volume, 6),
+            "sell_volume": round(sell_volume, 6),
+            "trade_count": len(trades),
+            "average_trade_size": round(total_volume / len(trades), 6) if trades else 0,
+            "buy_sell_ratio": round(buy_volume / sell_volume, 3) if sell_volume > 0 else 1.0,
+            "time_range": {
+                "start": trades[-1]["timestamp"] if trades else None,
+                "end": trades[0]["timestamp"] if trades else None
+            },
+            "price_range": {
+                "high": max(trade["price"] for trade in trades) if trades else 0,
+                "low": min(trade["price"] for trade in trades) if trades else 0,
+                "latest": trades[0]["price"] if trades else 0
+            }
+        }
+    
+    async def _get_volume_profile_data(self, symbol: str) -> Dict[str, Any]:
+        """获取成交量分布数据"""
+        try:
+            cache_key = f"volume_profile_{symbol}"
+            
+            if self._is_cache_valid(cache_key):
+                return self.cache[cache_key]["data"]
+            
+            # 生成成交量分布数据
+            volume_profile = self._generate_volume_profile_data(symbol)
+            self._cache_data(cache_key, volume_profile)
+            return volume_profile
+            
+        except Exception as e:
+            logger.error(f"获取成交量分布数据失败: {e}")
+            return self._generate_volume_profile_data(symbol)
+    
+    def _generate_volume_profile_data(self, symbol: str) -> Dict[str, Any]:
+        """生成成交量分布数据"""
+        base_price = 50000 if "BTC" in symbol else 3000
+        price_levels = []
+        
+        # 创建价格区间和对应的成交量
+        num_levels = 50  # 50个价格层级
+        price_range = base_price * 0.1  # ±10% 价格范围
+        
+        for i in range(num_levels):
+            # 价格层级
+            price_offset = (i - num_levels//2) * (price_range * 2 / num_levels)
+            price_level = base_price + price_offset
+            
+            # 成交量分布（中间价格成交量更大）
+            distance_from_center = abs(i - num_levels//2) / (num_levels//2)
+            volume_multiplier = max(0.1, 1 - distance_from_center * 0.8)  # 高斯分布近似
+            
+            base_volume = base_price * 0.05
+            volume = base_volume * volume_multiplier * (0.5 + random.random())
+            buy_volume = volume * (0.3 + random.random() * 0.4)  # 30%-70%买单
+            sell_volume = volume - buy_volume
+            
+            price_levels.append({
+                "price": round(price_level, 2),
+                "volume": round(volume, 6),
+                "buy_volume": round(buy_volume, 6),
+                "sell_volume": round(sell_volume, 6),
+                "trade_count": int(volume / (base_price * 0.001)),
+                "volume_percentage": 0  # 后续计算
+            })
+        
+        # 计算成交量百分比
+        total_volume = sum(level["volume"] for level in price_levels)
+        for level in price_levels:
+            level["volume_percentage"] = round(level["volume"] / total_volume * 100, 2)
+        
+        # 找到POC（Point of Control）- 成交量最大的价格
+        poc_level = max(price_levels, key=lambda x: x["volume"])
+        
+        # 计算价值区域（包含68%成交量的价格区间）
+        sorted_levels = sorted(price_levels, key=lambda x: x["volume"], reverse=True)
+        cumulative_volume = 0
+        value_area_levels = []
+        
+        for level in sorted_levels:
+            cumulative_volume += level["volume"]
+            value_area_levels.append(level)
+            if cumulative_volume >= total_volume * 0.68:
+                break
+        
+        value_area_high = max(level["price"] for level in value_area_levels)
+        value_area_low = min(level["price"] for level in value_area_levels)
+        
+        return {
+            "price_levels": price_levels,
+            "point_of_control": poc_level["price"],
+            "poc_volume": poc_level["volume"],
+            "value_area": {
+                "high": value_area_high,
+                "low": value_area_low,
+                "volume_percentage": 68.0
+            },
+            "total_volume": round(total_volume, 6),
+            "volume_distribution": "normal",
+            "analysis": {
+                "skewness": random.uniform(-0.5, 0.5),  # 偏度
+                "kurtosis": random.uniform(2.5, 4.0),   # 峰度
+                "concentration_ratio": poc_level["volume_percentage"] / 2  # 集中度
+            }
+        }
+    
+    async def _get_liquidity_metrics(self, symbol: str) -> Dict[str, Any]:
+        """获取流动性指标"""
+        try:
+            cache_key = f"liquidity_{symbol}"
+            
+            if self._is_cache_valid(cache_key):
+                return self.cache[cache_key]["data"]
+            
+            # 获取基础价格和订单簿数据来计算流动性指标
+            orderbook = await self._get_orderbook_data(symbol)
+            liquidity_data = self._calculate_liquidity_metrics(symbol, orderbook)
+            
+            self._cache_data(cache_key, liquidity_data)
+            return liquidity_data
+            
+        except Exception as e:
+            logger.error(f"获取流动性指标失败: {e}")
+            return self._generate_mock_liquidity_metrics(symbol)
+    
+    def _calculate_liquidity_metrics(self, symbol: str, orderbook: Dict[str, Any]) -> Dict[str, Any]:
+        """基于订单簿计算流动性指标"""
+        try:
+            bids = orderbook.get("bids", [])
+            asks = orderbook.get("asks", [])
+            base_price = orderbook.get("mid_price", 50000 if "BTC" in symbol else 3000)
+            
+            # 计算不同规模订单的流动性指标
+            test_sizes = [
+                {"name": "100_usd", "size": 100},
+                {"name": "1k_usd", "size": 1000},
+                {"name": "10k_usd", "size": 10000},
+                {"name": "100k_usd", "size": 100000},
+                {"name": "1m_usd", "size": 1000000}
+            ]
+            
+            liquidity_metrics = {}
+            
+            for test_size in test_sizes:
+                size_usd = test_size["size"]
+                size_name = test_size["name"]
+                
+                # 计算买单流动性（需要卖出这么多USD的价格冲击）
+                buy_impact = self._calculate_market_impact(asks, size_usd, "buy", base_price)
+                
+                # 计算卖单流动性（需要买入这么多USD的价格冲击）
+                sell_impact = self._calculate_market_impact(bids, size_usd, "sell", base_price)
+                
+                liquidity_metrics[size_name] = {
+                    "buy_impact": buy_impact,
+                    "sell_impact": sell_impact,
+                    "average_impact": (buy_impact + sell_impact) / 2,
+                    "liquidity_score": max(0, 1 - (buy_impact + sell_impact) / 2)  # 0-1分数
+                }
+            
+            # 计算整体流动性评分
+            overall_scores = [metrics["liquidity_score"] for metrics in liquidity_metrics.values()]
+            overall_score = sum(overall_scores) / len(overall_scores) if overall_scores else 0
+            
+            # 流动性质量评级
+            if overall_score > 0.9:
+                quality = "excellent"
+            elif overall_score > 0.8:
+                quality = "good"
+            elif overall_score > 0.6:
+                quality = "fair"
+            else:
+                quality = "poor"
+            
+            return {
+                "size_impact_analysis": liquidity_metrics,
+                "overall_liquidity_score": round(overall_score, 3),
+                "liquidity_quality": quality,
+                "depth_analysis": {
+                    "bid_depth_5": sum(bid["quantity"] for bid in bids[:5]) if len(bids) >= 5 else 0,
+                    "ask_depth_5": sum(ask["quantity"] for ask in asks[:5]) if len(asks) >= 5 else 0,
+                    "bid_depth_10": sum(bid["quantity"] for bid in bids[:10]) if len(bids) >= 10 else 0,
+                    "ask_depth_10": sum(ask["quantity"] for ask in asks[:10]) if len(asks) >= 10 else 0
+                },
+                "spread_analysis": {
+                    "bid_ask_spread": orderbook.get("spread", 0),
+                    "spread_percentage": orderbook.get("spread_percentage", 0),
+                    "effective_spread": orderbook.get("spread", 0) * 1.1  # 考虑实际交易成本
+                },
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"计算流动性指标失败: {e}")
+            return self._generate_mock_liquidity_metrics(symbol)
+    
+    def _calculate_market_impact(self, orders: List[Dict], size_usd: float, side: str, base_price: float) -> float:
+        """计算市场冲击"""
+        try:
+            remaining_size = size_usd
+            total_cost = 0
+            
+            for order in orders:
+                if remaining_size <= 0:
+                    break
+                
+                order_price = order["price"]
+                order_quantity = order["quantity"]
+                order_value = order_price * order_quantity
+                
+                if order_value >= remaining_size:
+                    # 这个订单就足够了
+                    needed_quantity = remaining_size / order_price
+                    total_cost += remaining_size
+                    remaining_size = 0
+                else:
+                    # 需要吃掉整个订单
+                    total_cost += order_value
+                    remaining_size -= order_value
+            
+            if remaining_size > 0:
+                # 订单簿深度不够，返回高冲击
+                return 0.1  # 10%冲击
+            
+            # 计算平均价格和冲击
+            average_price = total_cost / (size_usd / base_price)  # 平均成交价格
+            
+            if side == "buy":
+                impact = (average_price - base_price) / base_price
+            else:
+                impact = (base_price - average_price) / base_price
+            
+            return max(0, impact)
+            
+        except Exception as e:
+            logger.error(f"计算市场冲击失败: {e}")
+            return 0.05  # 默认5%冲击
+    
+    def _generate_mock_liquidity_metrics(self, symbol: str) -> Dict[str, Any]:
+        """生成模拟流动性指标"""
+        base_price = 50000 if "BTC" in symbol else 3000
+        
+        # 模拟不同规模订单的流动性指标
+        size_impacts = {
+            "100_usd": {"buy_impact": 0.0005, "sell_impact": 0.0005},
+            "1k_usd": {"buy_impact": 0.002, "sell_impact": 0.002},
+            "10k_usd": {"buy_impact": 0.005, "sell_impact": 0.006},
+            "100k_usd": {"buy_impact": 0.015, "sell_impact": 0.018},
+            "1m_usd": {"buy_impact": 0.045, "sell_impact": 0.055}
+        }
+        
+        for size_name in size_impacts:
+            impact_data = size_impacts[size_name]
+            impact_data["average_impact"] = (impact_data["buy_impact"] + impact_data["sell_impact"]) / 2
+            impact_data["liquidity_score"] = max(0, 1 - impact_data["average_impact"] * 10)
+        
+        overall_score = sum(data["liquidity_score"] for data in size_impacts.values()) / len(size_impacts)
+        
+        return {
+            "size_impact_analysis": size_impacts,
+            "overall_liquidity_score": round(overall_score, 3),
+            "liquidity_quality": "excellent" if overall_score > 0.9 else "good",
+            "depth_analysis": {
+                "bid_depth_5": base_price * 2.5,
+                "ask_depth_5": base_price * 2.8,
+                "bid_depth_10": base_price * 5.2,
+                "ask_depth_10": base_price * 5.8
+            },
+            "spread_analysis": {
+                "bid_ask_spread": base_price * 0.0002,
+                "spread_percentage": 0.02,
+                "effective_spread": base_price * 0.00025
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    async def _get_market_impact_data(self, symbol: str) -> Dict[str, Any]:
+        """获取市场冲击数据"""
+        try:
+            cache_key = f"market_impact_{symbol}"
+            
+            if self._is_cache_valid(cache_key):
+                return self.cache[cache_key]["data"]
+            
+            # 生成市场冲击数据
+            impact_data = self._generate_market_impact_data(symbol)
+            self._cache_data(cache_key, impact_data)
+            return impact_data
+            
+        except Exception as e:
+            logger.error(f"获取市场冲击数据失败: {e}")
+            return self._generate_market_impact_data(symbol)
+    
+    def _generate_market_impact_data(self, symbol: str) -> Dict[str, Any]:
+        """生成市场冲击数据"""
+        base_price = 50000 if "BTC" in symbol else 3000
+        
+        # 生成不同规模的市场冲击曲线
+        impact_curve = []
+        sizes = [100, 500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000]  # USD
+        
+        for size in sizes:
+            # 市场冲击通常与订单规模的平方根成正比
+            base_impact = 0.0001 * (size ** 0.5) / (base_price ** 0.3)
+            
+            # 添加一些随机性
+            buy_impact = base_impact * (0.8 + random.random() * 0.4)
+            sell_impact = base_impact * (0.8 + random.random() * 0.4)
+            
+            impact_curve.append({
+                "size_usd": size,
+                "size_base": round(size / base_price, 6),
+                "buy_impact": round(buy_impact, 6),
+                "sell_impact": round(sell_impact, 6),
+                "average_impact": round((buy_impact + sell_impact) / 2, 6)
+            })
+        
+        return {
+            "impact_curve": impact_curve,
+            "impact_model": {
+                "coefficient": 0.0002,
+                "exponent": 0.5,
+                "base_spread": base_price * 0.0001
+            },
+            "recovery_times": {
+                "small_orders": random.randint(1, 3),      # 1-3分钟
+                "medium_orders": random.randint(3, 10),     # 3-10分钟
+                "large_orders": random.randint(10, 30)      # 10-30分钟
+            },
+            "permanent_vs_temporary": {
+                "permanent_ratio": 0.3,  # 30%永久冲击
+                "temporary_ratio": 0.7   # 70%临时冲击
+            },
+            "liquidity_regeneration": {
+                "half_life_minutes": 5,
+                "full_recovery_minutes": 15
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+    
+    def _is_cache_valid(self, cache_key: str) -> bool:
+        """检查缓存是否有效"""
+        if cache_key not in self.cache:
+            return False
+        
+        cached_time = self.cache[cache_key]["cached_at"]
+        return (datetime.now().timestamp() - cached_time) < self.cache_expiry
+    
+    def _cache_data(self, cache_key: str, data: Dict[str, Any]):
+        """缓存数据"""
+        self.cache[cache_key] = {
+            "data": data,
+            "cached_at": datetime.now().timestamp()
+        }
+    
+    def _assess_microstructure_data_quality(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """评估微观结构数据质量"""
+        try:
+            quality_scores = {}
+            
+            # 评估各类数据的质量
+            data_types = ["order_book_data", "tick_data", "volume_profile", "liquidity_metrics", "market_impact_data"]
+            
+            for data_type in data_types:
+                type_data = data.get(data_type, {})
+                if not type_data or "error" in type_data:
+                    quality_scores[data_type] = 0.0
+                elif type_data.get("data_source") == "mock":
+                    quality_scores[data_type] = 0.7  # 模拟数据质量中等
+                else:
+                    quality_scores[data_type] = 0.95  # 真实数据质量高
+            
+            overall_quality = sum(quality_scores.values()) / len(quality_scores) if quality_scores else 0.0
+            
+            return {
+                "overall_quality": round(overall_quality, 3),
+                "data_type_scores": quality_scores,
+                "quality_level": "excellent" if overall_quality > 0.9 else "good" if overall_quality > 0.7 else "fair",
+                "data_freshness": "real_time" if self.data_source != "mock" else "simulated",
+                "assessment_time": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"评估数据质量失败: {e}")
+            return {"overall_quality": 0.5, "quality_level": "unknown"}

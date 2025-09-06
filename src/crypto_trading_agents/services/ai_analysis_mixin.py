@@ -15,13 +15,17 @@ logger = logging.getLogger(__name__)
 class AIAnalysisMixin:
     """AI分析混入类"""
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, config=None, *args, **kwargs):
         """初始化AI分析配置"""
-        super().__init__(*args, **kwargs)
+        # 调用父类初始化，不传递参数
+        super().__init__()
         
-        # AI配置（由子类传入config）
-        if hasattr(self, 'config'):
-            self.ai_analysis_config = self.config.get("ai_analysis_config", {})
+        # 存储config引用
+        self.config = config
+        
+        # AI配置
+        if config:
+            self.ai_analysis_config = config.get("ai_analysis_config", {})
             self.ai_enabled = self.ai_analysis_config.get("enabled", True)
         else:
             self.ai_analysis_config = {}

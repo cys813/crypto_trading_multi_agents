@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 
 from ...services.ai_analysis_mixin import StandardAIAnalysisMixin
 
+from datetime import datetime, timedelta
 logger = logging.getLogger(__name__)
 
 class MarketMakerAnalyst(StandardAIAnalysisMixin):
@@ -20,29 +21,32 @@ class MarketMakerAnalyst(StandardAIAnalysisMixin):
         初始化做市商分析师
         
         Args:
-            config: 配置字典
+            config: 分析师配置
         """
-        super().__init__()
+        # 调用父类构造函数
+        super().__init__(config)
+        
+        # 做市商特定配置
         self.config = config
-        self.supported_exchanges = config.get("crypto_config", {}).get("supported_exchanges", [])
+        self.supported_exchanges = config.get("supported_exchanges", ["binance", "okx"])
         
-        # 初始化统一LLM服务
-        from ...services.llm_service import initialize_llm_service
-        from ...config.ai_analysis_config import get_unified_llm_service_config
+        # 初始化数据服务
+        from src.crypto_trading_agents.services.trading_data_service import TradingDataService, MarketMicrostructureDataService
+        self.trading_data_service = TradingDataService(config)
+        self.microstructure_service = MarketMicrostructureDataService(config, self.trading_data_service)
         
-        llm_config = get_unified_llm_service_config()
-        initialize_llm_service(llm_config)
-        
-        # 市场微观结构指标权重
+        # 微观结构权重配置
         self.microstructure_weights = {
-            "order_book_imbalance": 0.25,
-            "liquidity_depth": 0.20,
-            "spread_analysis": 0.20,
+            "order_book": 0.3,
+            "liquidity": 0.25,
+            "spreads": 0.2,
             "volume_profile": 0.15,
-            "market_impact": 0.20,
+            "market_impact": 0.1
         }
+        
+        logger.info("做市商分析师初始化完成")
     
-    def collect_data(self, symbol: str, end_date: str) -> Dict[str, Any]:
+    async def collect_data(self, symbol: str, end_date: str) -> Dict[str, Any]:
         """
         收集市场微观结构数据
         
@@ -54,26 +58,70 @@ class MarketMakerAnalyst(StandardAIAnalysisMixin):
             市场微观结构数据
         """
         try:
-            # TODO: 实现真实的市场微观结构数据收集逻辑
-            # 这里使用模拟数据
+            logger.info(f"开始收集做市商数据: {symbol}, 截止日期: {end_date}")
             
-            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
-            start_dt = end_dt - timedelta(days=1)  # 做市分析通常用短期数据
+            # 使用专门的市场微观结构数据服务
+            microstructure_data = await self.microstructure_service.collect_market_microstructure_data(
+                symbol=symbol, 
+                end_date=end_date
+            )
+            
+            if "error" in microstructure_data:
+                logger.error(f"收集市场微观结构数据失败: {microstructure_data['error']}")
+                return microstructure_data
+            
+            # 添加元数据
+            microstructure_data.update({
+                "analyst_type": "market_maker",
+                "collection_timestamp": datetime.now().isoformat(),
+                "data_completeness": self._assess_data_completeness(microstructure_data)
+            })
+            
+            logger.info(f"成功收集做市商数据: {symbol}, 数据质量: {microstructure_data.get('data_quality', {}).get('quality_level', 'unknown')}")
+            
+            return microstructure_data
+            
+        except Exception as e:
+            logger.error(f"收集做市商数据失败: {symbol}, {str(e)}")
+            return {"error": str(e)}
+    
+    def _assess_data_completeness(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """评估数据完整性"""
+        try:
+            required_fields = ["order_book_data", "tick_data", "volume_profile", "liquidity_metrics", "market_impact_data"]
+            
+            completeness_scores = {}
+            for field in required_fields:
+                field_data = data.get(field, {})
+                if not field_data:
+                    completeness_scores[field] = 0.0
+                elif "error" in field_data:
+                    completeness_scores[field] = 0.0
+                else:
+                    # 检查关键数据字段
+                    if field == "order_book_data":
+                        score = 1.0 if field_data.get("bids") and field_data.get("asks") else 0.5
+                    elif field == "tick_data":
+                        score = 1.0 if field_data.get("trades") else 0.5
+                    elif field == "liquidity_metrics":
+                        score = 1.0 if field_data.get("overall_liquidity_score") is not None else 0.5
+                    else:
+                        score = 1.0 if field_data else 0.5
+                    
+                    completeness_scores[field] = score
+            
+            overall_completeness = sum(completeness_scores.values()) / len(completeness_scores)
             
             return {
-                "symbol": symbol,
-                "start_date": start_dt.strftime("%Y-%m-%d"),
-                "end_date": end_date,
-                "order_book_data": self._generate_order_book_data(symbol),
-                "tick_data": self._generate_tick_data(symbol),
-                "volume_profile": self._generate_volume_profile(symbol),
-                "liquidity_metrics": self._generate_liquidity_metrics(symbol),
-                "market_impact_data": self._generate_market_impact_data(symbol),
+                "overall_completeness": round(overall_completeness, 3),
+                "field_scores": completeness_scores,
+                "missing_fields": [field for field, score in completeness_scores.items() if score == 0.0],
+                "partial_fields": [field for field, score in completeness_scores.items() if 0 < score < 1.0]
             }
             
         except Exception as e:
-            logger.error(f"Error collecting market maker data for {symbol}: {str(e)}")
-            return {"error": str(e)}
+            logger.error(f"评估数据完整性失败: {e}")
+            return {"overall_completeness": 0.0}
     
     def analyze(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -101,6 +149,36 @@ class MarketMakerAnalyst(StandardAIAnalysisMixin):
         except Exception as e:
             logger.error(f"Error analyzing market maker data: {str(e)}")
             return {"error": str(e)}
+
+    async def run(self, symbol: str = "BTC/USDT", timeframe: str = "1d") -> Dict[str, Any]:
+        """
+        统一对外接口函数，执行完整的做市商分析流程
+        
+        Args:
+            symbol: 交易对符号，如 'BTC/USDT'
+            timeframe: 时间周期，如 '1d', '4h', '1h'
+            
+        Returns:
+            Dict[str, Any]: 完整的分析结果
+        """
+        try:
+            # 步骤1：收集数据
+            collected_data = await self.collect_data(symbol, timeframe)
+            
+            # 步骤2：执行分析
+            analysis_result = self.analyze(collected_data)
+            
+            return analysis_result
+            
+        except Exception as e:
+            logger.error(f"MarketMakerAnalyst run失败: {e}")
+            return {
+                'error': str(e),
+                'status': 'failed',
+                'symbol': symbol,
+                'timeframe': timeframe,
+                'analysis_type': 'market_maker'
+            }
     
     def _perform_traditional_analysis(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -815,3 +893,102 @@ class MarketMakerAnalyst(StandardAIAnalysisMixin):
         observations.append(f"价差水平: {spread_level}")
         
         return observations
+
+async def test_market_maker_data_integration():
+    """测试做市商数据集成"""
+    try:
+        # 基础配置
+        config = {
+            "trading_data_config": {
+                "data_source": "mock",
+                "cache_expiry": 60
+            },
+            "microstructure_config": {
+                "data_source": "mock",
+                "orderbook_depth": 20,
+                "tick_data_limit": 1000,
+                "cache_expiry": 60
+            },
+            "llm": {
+                "provider": "mock",
+                "model": "mock-model"
+            }
+        }
+        
+        # 初始化做市商分析师
+        analyst = MarketMakerAnalyst(config)
+        
+        # 测试数据收集
+        print("=== 测试数据收集 ===")
+        data = await analyst.collect_data("BTC/USDT", "2025-01-15")
+        
+        if "error" in data:
+            print(f"数据收集失败: {data['error']}")
+            return
+        
+        # 显示数据概览
+        print(f"符号: {data.get('symbol')}")
+        print(f"数据源: {data.get('data_source')}")
+        print(f"数据质量: {data.get('data_quality', {}).get('quality_level', 'unknown')}")
+        print(f"数据完整性: {data.get('data_completeness', {}).get('overall_completeness', 0):.2%}")
+        
+        # 检查各数据组件
+        print("\n=== 数据组件检查 ===")
+        components = ["order_book_data", "tick_data", "volume_profile", "liquidity_metrics", "market_impact_data"]
+        
+        for component in components:
+            component_data = data.get(component, {})
+            if component_data and "error" not in component_data:
+                print(f"✅ {component}: 可用")
+                
+                # 显示关键信息
+                if component == "order_book_data":
+                    bids = len(component_data.get("bids", []))
+                    asks = len(component_data.get("asks", []))
+                    spread = component_data.get("spread_percentage", 0)
+                    print(f"   - 买单档数: {bids}, 卖单档数: {asks}, 价差: {spread:.4f}%")
+                
+                elif component == "tick_data":
+                    trades = len(component_data.get("trades", []))
+                    volume = component_data.get("total_volume", 0)
+                    print(f"   - 交易笔数: {trades}, 总成交量: {volume:.2f}")
+                
+                elif component == "liquidity_metrics":
+                    score = component_data.get("overall_liquidity_score", 0)
+                    quality = component_data.get("liquidity_quality", "unknown")
+                    print(f"   - 流动性评分: {score:.3f}, 质量: {quality}")
+                
+            else:
+                print(f"❌ {component}: 不可用")
+        
+        # 测试分析功能
+        print("\n=== 测试分析功能 ===")
+        analysis_result = analyst.analyze(data)
+        
+        if "error" in analysis_result:
+            print(f"分析失败: {analysis_result['error']}")
+        else:
+            print("✅ 分析成功完成")
+            
+            # 显示分析结果概览
+            if "traditional_analysis" in analysis_result:
+                trad_analysis = analysis_result["traditional_analysis"]
+                print(f"传统分析 - 市场信号: {len(trad_analysis.get('market_signals', {}).get('bullish_signals', []))} 看涨, {len(trad_analysis.get('market_signals', {}).get('bearish_signals', []))} 看跌")
+                print(f"传统分析 - 置信度: {trad_analysis.get('confidence', 0):.2%}")
+            
+            if "ai_analysis" in analysis_result:
+                ai_analysis = analysis_result["ai_analysis"]
+                print(f"AI分析 - 置信度: {ai_analysis.get('confidence', 0):.2%}")
+        
+        print("\n=== 测试完成 ===")
+        return True
+        
+    except Exception as e:
+        print(f"测试失败: {e}")
+        import traceback
+        traceback.print_exc()
+        return False
+
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(test_market_maker_data_integration())

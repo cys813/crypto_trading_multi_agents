@@ -49,9 +49,9 @@ class CryptoTrader(StandardAIAnalysisMixin):
         
         # 初始化统一LLM服务
         from src.crypto_trading_agents.services.llm_service import initialize_llm_service
-        from src.crypto_trading_agents.config.ai_analysis_config import get_unified_llm_service_config
+        from src.crypto_trading_agents.unified_config import get_unified_config
         
-        llm_config = get_unified_llm_service_config()
+        llm_config = get_unified_config().get("llm_service_config")
         initialize_llm_service(llm_config)
         
         # 交易参数配置
@@ -746,3 +746,54 @@ class CryptoTrader(StandardAIAnalysisMixin):
             "confidence": confidence,
             "action": action,
         }
+    
+    def make_decision(self, analysis_results: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        基于分析结果做出交易决策
+        
+        Args:
+            analysis_results: 各个分析师的分析结果
+            
+        Returns:
+            交易决策结果
+        """
+        try:
+            # 综合各个分析师的分析结果
+            research_analysis = analysis_results.get("research_analysis", {})
+            risk_assessment = analysis_results.get("risk_assessment", {})
+            
+            # 执行交易分析
+            trading_analysis = self.analyze({
+                "symbol": analysis_results.get("symbol", "BTC/USDT"),
+                "analysis_results": analysis_results,
+                "research_analysis": research_analysis,
+                "risk_assessment": risk_assessment,
+            })
+            
+            if "error" in trading_analysis:
+                return {
+                    "decision": "hold",
+                    "confidence": 0.3,
+                    "reasoning": "交易分析失败",
+                    "error": trading_analysis["error"]
+                }
+            
+            # 执行交易
+            execution_result = self.execute_trade(trading_analysis)
+            
+            return {
+                "decision": execution_result.get("action", "hold"),
+                "confidence": execution_result.get("confidence", 0.5),
+                "execution_result": execution_result,
+                "trading_analysis": trading_analysis,
+                "timestamp": datetime.now().isoformat(),
+            }
+            
+        except Exception as e:
+            logger.error(f"交易决策失败: {str(e)}")
+            return {
+                "decision": "hold",
+                "confidence": 0.3,
+                "reasoning": "交易决策过程出错",
+                "error": str(e)
+            }

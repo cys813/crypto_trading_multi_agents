@@ -18,6 +18,7 @@ sys.path.insert(0, project_root)
 # 导入统一LLM服务
 from ...services.ai_analysis_mixin import StandardAIAnalysisMixin
 from ...services.llm_service import initialize_llm_service
+from ...services.onchain_data.defi_data_service import DeFiDataService
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,9 @@ class DefiAnalyst(StandardAIAnalysisMixin):
         # 初始化AI分析混入类
         super().__init__()
         
+        # 初始化DeFi数据服务
+        self.defi_data_service = DeFiDataService(config)
+        
         # 初始化LLM服务（如果还未初始化）
         llm_service_config = config.get("llm_service_config")
         if llm_service_config:
@@ -65,9 +69,53 @@ class DefiAnalyst(StandardAIAnalysisMixin):
             DeFi数据
         """
         try:
-            # TODO: 实现真实的DeFi数据收集逻辑
-            # 这里使用模拟数据
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+            start_dt = end_dt - timedelta(days=7)
             
+            # 提取币种基础信息
+            base_currency = symbol.split('/')[0]
+            
+            # 检查资产是否支持DeFi分析
+            is_defi_supported = self.defi_data_service.is_defi_supported(base_currency)
+            
+            # 使用真实DeFi数据服务获取数据
+            protocol_data = self.defi_data_service.get_protocol_data(base_currency)
+            liquidity_pools = self.defi_data_service.get_liquidity_pools_data(base_currency)
+            yield_farming = self.defi_data_service.get_yield_farming_data(base_currency)
+            governance_data = self.defi_data_service.get_governance_data(base_currency)
+            defi_aggregators = self.defi_data_service.get_aggregator_data(base_currency)
+            
+            return {
+                "symbol": symbol,
+                "base_currency": base_currency,
+                "start_date": start_dt.strftime("%Y-%m-%d"),
+                "end_date": end_date,
+                "protocol_data": protocol_data,
+                "liquidity_pools": liquidity_pools,
+                "yield_farming": yield_farming,
+                "governance_data": governance_data,
+                "defi_aggregators": defi_aggregators,
+                "is_defi_supported": is_defi_supported,
+                "data_source": "real" if is_defi_supported else "mock"
+            }
+            
+        except Exception as e:
+            logger.error(f"Error collecting DeFi data for {symbol}: {str(e)}")
+            # 回退到模拟数据
+            return self._collect_mock_data(symbol, end_date)
+    
+    def _collect_mock_data(self, symbol: str, end_date: str) -> Dict[str, Any]:
+        """
+        收集模拟DeFi数据（回退方案）
+        
+        Args:
+            symbol: 交易对符号
+            end_date: 截止日期
+            
+        Returns:
+            模拟DeFi数据
+        """
+        try:
             end_dt = datetime.strptime(end_date, "%Y-%m-%d")
             start_dt = end_dt - timedelta(days=7)
             
@@ -84,10 +132,13 @@ class DefiAnalyst(StandardAIAnalysisMixin):
                 "yield_farming": self._generate_yield_farming_data(base_currency),
                 "governance_data": self._generate_governance_data(base_currency),
                 "defi_aggregators": self._generate_aggregator_data(base_currency),
+                "is_defi_supported": False,
+                "data_source": "mock",
+                "fallback_reason": "real_data_collection_failed"
             }
             
         except Exception as e:
-            logger.error(f"Error collecting DeFi data for {symbol}: {str(e)}")
+            logger.error(f"Error collecting mock DeFi data for {symbol}: {str(e)}")
             return {"error": str(e)}
     
     def analyze(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -110,6 +161,36 @@ class DefiAnalyst(StandardAIAnalysisMixin):
         except Exception as e:
             logger.error(f"Error analyzing DeFi data: {str(e)}")
             return {"error": str(e)}
+
+    async def run(self, symbol: str = "BTC/USDT", timeframe: str = "1d") -> Dict[str, Any]:
+        """
+        统一对外接口函数，执行完整的DeFi分析流程
+        
+        Args:
+            symbol: 交易对符号，如 'BTC/USDT'
+            timeframe: 时间周期（对DeFi分析影响较小）
+            
+        Returns:
+            Dict[str, Any]: 完整的分析结果
+        """
+        try:
+            # 步骤1：收集数据
+            collected_data = await self.collect_data(symbol, timeframe)
+            
+            # 步骤2：执行分析
+            analysis_result = await self.analyze(collected_data)
+            
+            return analysis_result
+            
+        except Exception as e:
+            logger.error(f"DefiAnalyst run失败: {e}")
+            return {
+                'error': str(e),
+                'status': 'failed', 
+                'symbol': symbol,
+                'timeframe': timeframe,
+                'analysis_type': 'defi'
+            }
 
     def _traditional_analyze(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -620,13 +701,68 @@ class DefiAnalyst(StandardAIAnalysisMixin):
             "governance_data", "defi_aggregators"
         ]
         
+        # 计算完整性
         completeness = sum(1 for field in required_fields if field in data and data[field]) / len(required_fields)
+        
+        # 获取数据源信息
+        data_source = data.get("data_source", "unknown")
+        is_defi_supported = data.get("is_defi_supported", False)
+        
+        # 根据数据源调整可靠性评分
+        if data_source == "real" and is_defi_supported:
+            reliability = "high"
+            quality_score = min(1.0, completeness + 0.2)  # 真实数据质量更高
+        elif data_source == "mock":
+            reliability = "low"
+            quality_score = completeness * 0.5  # 模拟数据质量较低
+        else:
+            reliability = "medium" if completeness > 0.6 else "low"
+            quality_score = completeness
+        
+        # 评估新鲜度
+        freshness = "recent"
+        if "end_date" in data:
+            try:
+                from datetime import datetime, timedelta
+                end_date = datetime.strptime(data["end_date"], "%Y-%m-%d")
+                days_diff = (datetime.now() - end_date).days
+                if days_diff <= 1:
+                    freshness = "very_recent"
+                elif days_diff <= 7:
+                    freshness = "recent"
+                else:
+                    freshness = "outdated"
+            except:
+                freshness = "unknown"
+        
+        # 检查数据内容质量
+        content_quality = "unknown"
+        if data_source == "real":
+            # 检查真实数据是否包含有意义的内容
+            protocol_count = len(data.get("protocol_data", {}))
+            pool_count = len(data.get("liquidity_pools", {}).get("pools", []))
+            farm_count = len(data.get("yield_farming", {}).get("farms", []))
+            
+            if protocol_count > 0 or pool_count > 0 or farm_count > 0:
+                content_quality = "good"
+            else:
+                content_quality = "poor"
+        elif data_source == "mock":
+            content_quality = "simulated"
         
         return {
             "completeness": completeness,
-            "quality_score": completeness,
-            "freshness": "recent",  # 假设数据是最近的
-            "reliability": "high" if completeness > 0.8 else "medium" if completeness > 0.6 else "low",
+            "quality_score": quality_score,
+            "freshness": freshness,
+            "reliability": reliability,
+            "data_source": data_source,
+            "is_defi_supported": is_defi_supported,
+            "content_quality": content_quality,
+            "details": {
+                "protocol_data_count": len(data.get("protocol_data", {})),
+                "liquidity_pool_count": len(data.get("liquidity_pools", {}).get("pools", [])),
+                "yield_farm_count": len(data.get("yield_farming", {}).get("farms", []))
+            }
         }
 
     

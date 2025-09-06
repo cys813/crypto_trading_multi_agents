@@ -287,3 +287,347 @@ class BullResearcher(StandardAIAnalysisMixin):
 
 请以JSON格式回复，包含enhanced_signals, market_outlook, risk_factors, opportunities, confidence_adjustment字段。
 """
+
+    def analyze(self, debate_material: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        接收辩论材料进行分析
+        
+        Args:
+            debate_material: 包含所有分析师分析结果的辩论材料
+            
+        Returns:
+            牛市研究分析结果
+        """
+        try:
+            # 解析辩论材料
+            technical_analysis = debate_material.get("technical_analysis", {})
+            onchain_analysis = debate_material.get("onchain_analysis", {})
+            sentiment_analysis = debate_material.get("sentiment_analysis", {})
+            market_analysis = debate_material.get("market_analysis", {})
+            defi_analysis = debate_material.get("defi_analysis", {})
+            
+            # 综合牛市信号分析
+            bull_signals = self._analyze_comprehensive_bull_signals(
+                technical_analysis, onchain_analysis, sentiment_analysis, 
+                market_analysis, defi_analysis
+            )
+            
+            # AI增强分析
+            ai_enhancement = {}
+            if self.is_ai_enabled():
+                try:
+                    ai_enhancement = self._enhance_bull_research_with_ai(
+                        bull_signals, debate_material
+                    )
+                except Exception as e:
+                    logger.warning(f"BullResearcher AI增强分析失败: {e}")
+                    ai_enhancement = {"ai_error": str(e)}
+            
+            return {
+                "bull_signals": bull_signals,
+                "bull_recommendations": self._generate_bull_recommendations(bull_signals),
+                "risk_assessment": self._assess_bull_risks(bull_signals, debate_material),
+                "confidence": self._calculate_bull_confidence(bull_signals),
+                "key_observations": self._generate_bull_observations(bull_signals),
+                "ai_enhanced": self.is_ai_enabled(),
+                "ai_analysis": ai_enhancement,
+                "debate_material_summary": self._summarize_debate_material(debate_material)
+            }
+            
+        except Exception as e:
+            logger.error(f"BullResearcher analyze失败: {e}")
+            return {"error": str(e)}
+
+    def _analyze_comprehensive_bull_signals(self, technical_analysis: Dict[str, Any], 
+                                           onchain_analysis: Dict[str, Any], 
+                                           sentiment_analysis: Dict[str, Any],
+                                           market_analysis: Dict[str, Any], 
+                                           defi_analysis: Dict[str, Any]) -> List[str]:
+        """
+        分析综合看涨信号
+        
+        Args:
+            technical_analysis: 技术分析结果
+            onchain_analysis: 链上分析结果
+            sentiment_analysis: 情绪分析结果
+            market_analysis: 市场分析结果
+            defi_analysis: DeFi分析结果
+            
+        Returns:
+            看涨信号列表
+        """
+        try:
+            bull_signals = []
+            
+            # 技术分析看涨信号
+            if technical_analysis and "error" not in technical_analysis:
+                tech_signals = self._extract_technical_bull_signals(technical_analysis)
+                bull_signals.extend(tech_signals)
+            
+            # 链上分析看涨信号
+            if onchain_analysis and "error" not in onchain_analysis:
+                onchain_signals = self._extract_onchain_bull_signals(onchain_analysis)
+                bull_signals.extend(onchain_signals)
+            
+            # 情绪分析看涨信号
+            if sentiment_analysis and "error" not in sentiment_analysis:
+                sentiment_signals = self._extract_sentiment_bull_signals(sentiment_analysis)
+                bull_signals.extend(sentiment_signals)
+            
+            # 市场分析看涨信号
+            if market_analysis and "error" not in market_analysis:
+                market_signals = self._extract_market_bull_signals(market_analysis)
+                bull_signals.extend(market_signals)
+            
+            # DeFi分析看涨信号
+            if defi_analysis and "error" not in defi_analysis:
+                defi_signals = self._extract_defi_bull_signals(defi_analysis)
+                bull_signals.extend(defi_signals)
+            
+            return bull_signals
+            
+        except Exception as e:
+            logger.error(f"分析综合看涨信号失败: {str(e)}")
+            return ["信号分析出错"]
+    
+    def _extract_technical_bull_signals(self, technical_analysis: Dict[str, Any]) -> List[str]:
+        """提取技术分析看涨信号"""
+        signals = []
+        
+        # 检查技术指标
+        if "indicators" in technical_analysis:
+            indicators = technical_analysis["indicators"]
+            if indicators.get("rsi", 50) < 30:
+                signals.append("RSI超卖，可能反弹")
+            if indicators.get("macd", {}).get("signal") == "bullish":
+                signals.append("MACD金叉看涨信号")
+            if indicators.get("ma_trend") == "upward":
+                signals.append("均线趋势向上")
+        
+        # 检查价格动量
+        if "momentum" in technical_analysis:
+            momentum = technical_analysis["momentum"]
+            if momentum.get("strength") == "strong":
+                signals.append("价格动量强劲")
+        
+        return signals
+    
+    def _extract_onchain_bull_signals(self, onchain_analysis: Dict[str, Any]) -> List[str]:
+        """提取链上分析看涨信号"""
+        signals = []
+        
+        # 检查链上指标
+        if "metrics" in onchain_analysis:
+            metrics = onchain_analysis["metrics"]
+            if metrics.get("active_addresses_growth") > 0.1:
+                signals.append("活跃地址增长")
+            if metrics.get("exchange_outflow") > 0:
+                signals.append("交易所流出增加")
+            if metrics.get("whale_accumulation") > 0:
+                signals.append("巨鲸积累信号")
+        
+        return signals
+    
+    def _extract_sentiment_bull_signals(self, sentiment_analysis: Dict[str, Any]) -> List[str]:
+        """提取情绪分析看涨信号"""
+        signals = []
+        
+        # 检查情绪指标
+        if "sentiment_score" in sentiment_analysis:
+            sentiment = sentiment_analysis["sentiment_score"]
+            if sentiment > 0.6:
+                signals.append("市场情绪偏向看涨")
+        
+        # 检查社交媒体情绪
+        if "social_sentiment" in sentiment_analysis:
+            social = sentiment_analysis["social_sentiment"]
+            if social.get("twitter_sentiment") > 0.5:
+                signals.append("Twitter情绪看涨")
+        
+        return signals
+    
+    def _extract_market_bull_signals(self, market_analysis: Dict[str, Any]) -> List[str]:
+        """提取市场分析看涨信号"""
+        signals = []
+        
+        # 检查市场微观结构
+        if "market_structure" in market_analysis:
+            structure = market_analysis["market_structure"]
+            if structure.get("order_book_pressure") == "buying_pressure":
+                signals.append("订单簿买压较强")
+            if structure.get("liquidity_quality") == "excellent":
+                signals.append("市场流动性充足")
+        
+        # 检查价差
+        if "spreads" in market_analysis:
+            spreads = market_analysis["spreads"]
+            if spreads.get("spread_level") == "tight":
+                signals.append("买卖价差收窄")
+        
+        return signals
+    
+    def _extract_defi_bull_signals(self, defi_analysis: Dict[str, Any]) -> List[str]:
+        """提取DeFi分析看涨信号"""
+        signals = []
+        
+        # 检查DeFi指标
+        if "defi_metrics" in defi_analysis:
+            metrics = defi_analysis["defi_metrics"]
+            if metrics.get("tvl_growth") > 0.1:
+                signals.append("DeFi TVL增长")
+            if metrics.get("yield_farming_activity") > 0.5:
+                signals.append("收益耕作活跃")
+        
+        return signals
+    
+    def _generate_bull_recommendations(self, bull_signals: List[str]) -> List[str]:
+        """生成看涨建议"""
+        recommendations = []
+        
+        if len(bull_signals) >= 3:
+            recommendations.append("强烈建议买入，多个维度显示看涨信号")
+        elif len(bull_signals) >= 2:
+            recommendations.append("建议考虑买入，看涨信号较强")
+        elif len(bull_signals) >= 1:
+            recommendations.append("可关注买入机会，看涨信号出现")
+        else:
+            recommendations.append("建议观望，看涨信号不足")
+        
+        return recommendations
+    
+    def _assess_bull_risks(self, bull_signals: List[str], debate_material: Dict[str, Any]) -> Dict[str, Any]:
+        """评估看涨风险"""
+        try:
+            risk_level = "low"
+            risk_factors = []
+            
+            # 基于信号数量评估风险
+            if len(bull_signals) < 2:
+                risk_level = "medium"
+                risk_factors.append("看涨信号不足，风险较高")
+            
+            # 检查市场整体风险
+            market_condition = debate_material.get("market_condition", "normal")
+            if market_condition == "volatile":
+                risk_level = "high"
+                risk_factors.append("市场波动性高")
+            
+            return {
+                "risk_level": risk_level,
+                "risk_factors": risk_factors,
+                "risk_score": len(risk_factors) * 0.2
+            }
+            
+        except Exception as e:
+            logger.error(f"评估看涨风险失败: {str(e)}")
+            return {"risk_level": "medium", "risk_factors": ["风险评估失败"], "risk_score": 0.5}
+    
+    def _calculate_bull_confidence(self, bull_signals: List[str]) -> float:
+        """计算看涨置信度"""
+        try:
+            base_confidence = 0.3
+            signal_bonus = min(0.5, len(bull_signals) * 0.1)
+            
+            confidence = base_confidence + signal_bonus
+            return min(0.95, confidence)
+            
+        except Exception as e:
+            logger.error(f"计算看涨置信度失败: {str(e)}")
+            return 0.5
+    
+    def _generate_bull_observations(self, bull_signals: List[str]) -> List[str]:
+        """生成看涨观察"""
+        observations = []
+        
+        if bull_signals:
+            observations.append(f"检测到{len(bull_signals)}个看涨信号")
+            observations.extend(bull_signals[:3])  # 前3个信号
+        else:
+            observations.append("未检测到明显看涨信号")
+        
+        return observations
+    
+    def _enhance_bull_research_with_ai(self, bull_signals: List[str], debate_material: Dict[str, Any]) -> Dict[str, Any]:
+        """使用AI增强看涨研究"""
+        try:
+            # 构建AI分析提示词
+            prompt = self._build_bull_research_ai_prompt(bull_signals, debate_material)
+            
+            # 调用AI分析
+            ai_response = self.call_ai_analysis(prompt)
+            
+            # 解析AI响应
+            ai_analysis = self.parse_ai_json_response(ai_response, {
+                "enhanced_signals": [],
+                "market_outlook": "moderate_bullish",
+                "risk_factors": [],
+                "opportunities": [],
+                "confidence_adjustment": 0.0
+            })
+            
+            return ai_analysis
+            
+        except Exception as e:
+            logger.error(f"AI增强看涨研究失败: {str(e)}")
+            return {"ai_error": str(e)}
+    
+    def _build_bull_research_ai_prompt(self, bull_signals: List[str], debate_material: Dict[str, Any]) -> str:
+        """构建看涨研究AI提示词"""
+        import json
+        
+        return f"""
+作为专业的加密货币看涨研究员，请基于以下分析结果提供AI增强洞察：
+
+## 当前看涨信号
+{json.dumps(bull_signals, ensure_ascii=False, indent=2)}
+
+## 辩论材料摘要
+{json.dumps({k: v for k, v in debate_material.items() if isinstance(v, dict) and "error" not in v}, ensure_ascii=False, indent=2)}
+
+## 请提供以下AI增强分析：
+
+### 1. 增强的看涨信号识别
+- 识别可能被遗漏的看涨信号
+- 分析信号的强度和可靠性
+
+### 2. 市场前景展望
+- 短期、中期、长期市场展望
+- 关键支撑位和阻力位分析
+
+### 3. 潜在风险因素
+- 识别可能的市场风险
+- 评估风险对看涨观点的影响
+
+### 4. 投资机会分析
+- 识别具体的投资机会
+- 建议的入场时机和策略
+
+### 5. 置信度调整建议
+- 基于AI分析的置信度调整
+- 关键的不确定性因素
+
+请以JSON格式返回分析结果，包含enhanced_signals, market_outlook, risk_factors, opportunities, confidence_adjustment字段。
+"""
+    
+    def _summarize_debate_material(self, debate_material: Dict[str, Any]) -> Dict[str, Any]:
+        """总结辩论材料"""
+        try:
+            summary = {}
+            
+            for key, value in debate_material.items():
+                if isinstance(value, dict) and "error" not in value:
+                    summary[key] = {
+                        "status": "available",
+                        "key_metrics": list(value.keys())[:5]  # 前5个关键指标
+                    }
+                else:
+                    summary[key] = {
+                        "status": "error" if "error" in value else "unknown",
+                        "message": value.get("error", "Unknown status") if isinstance(value, dict) else "Data unavailable"
+                    }
+            
+            return summary
+            
+        except Exception as e:
+            logger.error(f"总结辩论材料失败: {str(e)}")
+            return {"error": f"Material summary failed: {str(e)}"}

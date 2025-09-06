@@ -657,3 +657,276 @@ class ResearchManager:
             "average_completion_time": 300,  # 模拟平均完成时间
             "last_updated": datetime.now().isoformat(),
         }
+
+    def synthesize(self, bull_analysis: Dict[str, Any], bear_analysis: Dict[str, Any], 
+                  debate_material: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        综合看涨和看跌研究分析结果
+        
+        Args:
+            bull_analysis: 看涨研究员分析结果
+            bear_analysis: 看跌研究员分析结果
+            debate_material: 辩论材料
+            
+        Returns:
+            综合研究分析结果
+        """
+        try:
+            # 提取关键指标
+            bull_confidence = bull_analysis.get("confidence", 0.5)
+            bear_confidence = bear_analysis.get("confidence", 0.5)
+            
+            bull_signals = bull_analysis.get("bull_signals", [])
+            bear_signals = bear_analysis.get("bear_signals", [])
+            
+            # 计算综合置信度
+            combined_confidence = (bull_confidence + bear_confidence) / 2
+            
+            # 分析信号一致性
+            signal_consensus = self._analyze_signal_consensus(bull_signals, bear_signals)
+            
+            # 生成综合建议
+            synthesis_recommendation = self._generate_synthesis_recommendation(
+                bull_analysis, bear_analysis, signal_consensus
+            )
+            
+            # 整合研究材料
+            integrated_material = self._integrate_research_material(debate_material)
+            
+            return {
+                "synthesis_timestamp": datetime.now().isoformat(),
+                "bull_analysis_summary": {
+                    "confidence": bull_confidence,
+                    "key_signals": bull_signals[:3],  # 前3个关键信号
+                    "primary_conclusion": bull_analysis.get("conclusion", "bullish")
+                },
+                "bear_analysis_summary": {
+                    "confidence": bear_confidence,
+                    "key_signals": bear_signals[:3],  # 前3个关键信号
+                    "primary_conclusion": bear_analysis.get("conclusion", "bearish")
+                },
+                "signal_consensus": signal_consensus,
+                "combined_confidence": combined_confidence,
+                "synthesis_recommendation": synthesis_recommendation,
+                "integrated_research": integrated_material,
+                "research_quality": self._assess_research_quality(bull_analysis, bear_analysis),
+                "key_insights": self._extract_key_insights(bull_analysis, bear_analysis),
+                "research_citation": {
+                    "bull_researcher": "BullResearcher",
+                    "bear_researcher": "BearResearcher",
+                    "synthesis_method": "weighted_consensus",
+                    "confidence_weighting": "equal"
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Error synthesizing research analysis: {str(e)}")
+            return {
+                "synthesis_timestamp": datetime.now().isoformat(),
+                "error": f"Research synthesis failed: {str(e)}",
+                "bull_analysis_summary": {"confidence": 0.0, "key_signals": [], "primary_conclusion": "unknown"},
+                "bear_analysis_summary": {"confidence": 0.0, "key_signals": [], "primary_conclusion": "unknown"},
+                "signal_consensus": "unknown",
+                "combined_confidence": 0.0,
+                "synthesis_recommendation": {"action": "hold", "reasoning": "synthesis_error"},
+                "integrated_research": {},
+                "research_quality": "poor",
+                "key_insights": ["Research synthesis encountered an error"],
+                "research_citation": {}
+            }
+    
+    def _analyze_signal_consensus(self, bull_signals: List[str], bear_signals: List[str]) -> str:
+        """分析信号一致性"""
+        try:
+            # 计算信号强度
+            bull_strength = len(bull_signals)
+            bear_strength = len(bear_signals)
+            
+            if bull_strength > bear_strength * 1.5:
+                return "strong_bullish"
+            elif bear_strength > bull_strength * 1.5:
+                return "strong_bearish"
+            elif abs(bull_strength - bear_strength) <= 1:
+                return "balanced"
+            elif bull_strength > bear_strength:
+                return "moderate_bullish"
+            else:
+                return "moderate_bearish"
+                
+        except Exception as e:
+            logger.error(f"Error analyzing signal consensus: {str(e)}")
+            return "unknown"
+    
+    def _generate_synthesis_recommendation(self, bull_analysis: Dict[str, Any], 
+                                         bear_analysis: Dict[str, Any], 
+                                         consensus: str) -> Dict[str, Any]:
+        """生成综合建议"""
+        try:
+            # 基于共识生成建议
+            if "strong_bullish" in consensus:
+                action = "buy"
+                reasoning = "Strong bullish consensus from research analysis"
+            elif "strong_bearish" in consensus:
+                action = "sell"
+                reasoning = "Strong bearish consensus from research analysis"
+            elif "balanced" in consensus:
+                action = "hold"
+                reasoning = "Balanced research signals, maintain current position"
+            elif "moderate_bullish" in consensus:
+                action = "buy"
+                reasoning = "Moderate bullish bias in research analysis"
+            elif "moderate_bearish" in consensus:
+                action = "sell"
+                reasoning = "Moderate bearish bias in research analysis"
+            else:
+                action = "hold"
+                reasoning = "Insufficient consensus for clear recommendation"
+            
+            # 计算综合置信度
+            bull_conf = bull_analysis.get("confidence", 0.5)
+            bear_conf = bear_analysis.get("confidence", 0.5)
+            confidence = (bull_conf + bear_conf) / 2
+            
+            return {
+                "action": action,
+                "confidence": confidence,
+                "reasoning": reasoning,
+                "consensus_level": consensus,
+                "risk_adjustment": "moderate" if "moderate" in consensus else "strong" if "strong" in consensus else "neutral"
+            }
+            
+        except Exception as e:
+            logger.error(f"Error generating synthesis recommendation: {str(e)}")
+            return {
+                "action": "hold",
+                "confidence": 0.3,
+                "reasoning": "Error in recommendation generation",
+                "consensus_level": "unknown",
+                "risk_adjustment": "neutral"
+            }
+    
+    def _integrate_research_material(self, debate_material: Dict[str, Any]) -> Dict[str, Any]:
+        """整合研究材料"""
+        try:
+            integrated = {}
+            
+            # 整合各种分析结果
+            for key, value in debate_material.items():
+                if isinstance(value, dict) and "error" not in value:
+                    integrated[key] = {
+                        "summary": self._generate_analysis_summary(value),
+                        "key_metrics": self._extract_key_metrics(value),
+                        "data_quality": self._assess_data_quality(value)
+                    }
+                else:
+                    integrated[key] = value
+            
+            return integrated
+            
+        except Exception as e:
+            logger.error(f"Error integrating research material: {str(e)}")
+            return {"error": f"Material integration failed: {str(e)}"}
+    
+    def _generate_analysis_summary(self, analysis: Dict[str, Any]) -> str:
+        """生成分析摘要"""
+        try:
+            confidence = analysis.get("confidence", 0.5)
+            risk_level = analysis.get("risk_level", "medium")
+            
+            if confidence > 0.7:
+                confidence_desc = "high confidence"
+            elif confidence > 0.4:
+                confidence_desc = "moderate confidence"
+            else:
+                confidence_desc = "low confidence"
+            
+            return f"Analysis with {confidence_desc}, {risk_level} risk assessment"
+            
+        except Exception as e:
+            logger.error(f"Error generating analysis summary: {str(e)}")
+            return "Analysis summary unavailable"
+    
+    def _extract_key_metrics(self, analysis: Dict[str, Any]) -> Dict[str, Any]:
+        """提取关键指标"""
+        try:
+            metrics = {}
+            
+            # 提取通用指标
+            common_metrics = ["confidence", "risk_level", "strength", "momentum"]
+            for metric in common_metrics:
+                if metric in analysis:
+                    metrics[metric] = analysis[metric]
+            
+            return metrics
+            
+        except Exception as e:
+            logger.error(f"Error extracting key metrics: {str(e)}")
+            return {}
+    
+    def _assess_data_quality(self, analysis: Dict[str, Any]) -> str:
+        """评估数据质量"""
+        try:
+            confidence = analysis.get("confidence", 0.5)
+            
+            if confidence > 0.7:
+                return "high"
+            elif confidence > 0.4:
+                return "medium"
+            else:
+                return "low"
+                
+        except Exception as e:
+            logger.error(f"Error assessing data quality: {str(e)}")
+            return "unknown"
+    
+    def _assess_research_quality(self, bull_analysis: Dict[str, Any], bear_analysis: Dict[str, Any]) -> str:
+        """评估研究质量"""
+        try:
+            bull_confidence = bull_analysis.get("confidence", 0.5)
+            bear_confidence = bear_analysis.get("confidence", 0.5)
+            
+            avg_confidence = (bull_confidence + bear_confidence) / 2
+            
+            if avg_confidence > 0.7:
+                return "excellent"
+            elif avg_confidence > 0.5:
+                return "good"
+            elif avg_confidence > 0.3:
+                return "fair"
+            else:
+                return "poor"
+                
+        except Exception as e:
+            logger.error(f"Error assessing research quality: {str(e)}")
+            return "unknown"
+    
+    def _extract_key_insights(self, bull_analysis: Dict[str, Any], bear_analysis: Dict[str, Any]) -> List[str]:
+        """提取关键洞察"""
+        try:
+            insights = []
+            
+            # 从看涨分析中提取洞察
+            bull_conclusion = bull_analysis.get("conclusion", "")
+            if bull_conclusion:
+                insights.append(f"Bullish perspective: {bull_conclusion}")
+            
+            # 从看跌分析中提取洞察
+            bear_conclusion = bear_analysis.get("conclusion", "")
+            if bear_conclusion:
+                insights.append(f"Bearish perspective: {bear_conclusion}")
+            
+            # 添加其他关键洞察
+            bull_signals = bull_analysis.get("bull_signals", [])
+            bear_signals = bear_analysis.get("bear_signals", [])
+            
+            if bull_signals:
+                insights.append(f"Key bullish factors: {', '.join(bull_signals[:2])}")
+            
+            if bear_signals:
+                insights.append(f"Key bearish factors: {', '.join(bear_signals[:2])}")
+            
+            return insights[:5]  # 限制为前5个洞察
+            
+        except Exception as e:
+            logger.error(f"Error extracting key insights: {str(e)}")
+            return ["Unable to extract insights due to error"]

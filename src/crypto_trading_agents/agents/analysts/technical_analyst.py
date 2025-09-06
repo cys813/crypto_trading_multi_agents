@@ -618,6 +618,36 @@ class TechnicalAnalyst:
         except Exception as e:
             logger.error(f"Error analyzing technical data: {str(e)}")
             return {"error": str(e)}
+
+    async def run(self, symbol: str = "BTC/USDT", timeframe: str = "1d") -> Dict[str, Any]:
+        """
+        统一对外接口函数，执行完整的技术分析流程
+        
+        Args:
+            symbol: 交易对符号，如 'BTC/USDT'
+            timeframe: 时间周期，如 '1d', '4h', '1h'
+            
+        Returns:
+            Dict[str, Any]: 完整的分析结果
+        """
+        try:
+            # 步骤1：收集数据
+            collected_data = await self.collect_data(symbol, timeframe)
+            
+            # 步骤2：执行分析
+            analysis_result = await self.analyze(collected_data)
+            
+            return analysis_result
+            
+        except Exception as e:
+            logger.error(f"TechnicalAnalyst run失败: {e}")
+            return {
+                'error': str(e),
+                'status': 'failed',
+                'symbol': symbol,
+                'timeframe': timeframe,
+                'analysis_type': 'technical'
+            }
     
     def _perform_traditional_analysis(self, data: Dict[str, Any], indicators: Dict[str, Any], 
                                     market_structure: Dict[str, Any]) -> Dict[str, Any]:

@@ -7,6 +7,7 @@
 from typing import Dict, Any, List, Optional
 import logging
 from datetime import datetime
+import numpy as np
 
 from ..agents.analysts.technical_analyst import TechnicalAnalyst
 from ..agents.analysts.onchain_analyst import OnchainAnalyst  
@@ -18,7 +19,7 @@ from ..agents.researchers.bear_researcher import BearResearcher
 from ..agents.traders.crypto_trader import CryptoTrader
 from ..agents.risk_managers.crypto_risk_manager import CryptoRiskManager
 from ..agents.managers.research_manager import ResearchManager
-from ..config.exchange_config import ExchangeConfig
+from ..unified_config import get_unified_config
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +36,8 @@ class CryptoTradingGraph:
         """
         self.config = config
         self.debug = debug
-        self.config_manager = ExchangeConfig()
+        # 使用统一配置系统代替Exchange配置
+        self.unified_config = get_unified_config()
         
         # 初始化智能体
         self._initialize_agents()
@@ -63,6 +65,15 @@ class CryptoTradingGraph:
         # 交易和风控
         self.crypto_trader = CryptoTrader(self.config)
         self.crypto_risk_manager = CryptoRiskManager(self.config)
+      
+        # 辩论团队
+        from ..agents.risk_managers.conservative_debator import ConservativeDebator
+        from ..agents.risk_managers.neutral_debator import NeutralDebator
+        from ..agents.risk_managers.aggresive_debator import AggressiveDebator
+        
+        self.conservative_debator = ConservativeDebator(self.config)
+        self.neutral_debator = NeutralDebator(self.config)
+        self.aggressive_debator = AggressiveDebator(self.config)
     
     def propagate(self, symbol: str, end_date: str, **kwargs) -> tuple[Dict[str, Any], Dict[str, Any]]:
         """
@@ -213,9 +224,49 @@ class CryptoTradingGraph:
         bear_analysis = self.bear_researcher.analyze(debate_material)
         
         # 研究经理综合辩论
-        self.current_state["research_summary"] = self.research_manager.synthesize(
+        research_summary = self.research_manager.synthesize(
             bull_analysis, bear_analysis, debate_material
         )
+        
+        # 第三阶段子阶段3.5：辩论员风险评估辩论
+        if self.debug:
+            logger.info("Phase 3.5: Debator Risk Assessment Debate")
+        
+        # 准备辩论员输入材料
+        debator_input = {
+            "market_report": self.current_state.get("market_report", ""),
+            "sentiment_report": self.current_state.get("sentiment_report", ""),
+            "news_report": self.current_state.get("news_report", ""),
+            "fundamentals_report": self.current_state.get("fundamentals_report", ""),
+            "investment_plan": self.current_state.get("investment_plan", ""),
+            "research_summary": research_summary,
+            "bull_analysis": bull_analysis,
+            "bear_analysis": bear_analysis,
+            "technical_analysis": debate_material["technical_analysis"],
+            "onchain_analysis": debate_material["onchain_analysis"],
+            "sentiment_analysis": debate_material["sentiment_analysis"],
+            "market_analysis": debate_material["market_analysis"],
+            "defi_analysis": debate_material["defi_analysis"]
+        }
+        
+        # 三个辩论员进行分析辩论
+        conservative_debate = self.conservative_debator.analyze_with_debate_material(debator_input)
+        neutral_debate = self.neutral_debator.analyze_with_debate_material(debator_input)
+        aggressive_debate = self.aggressive_debator.analyze_with_debate_material(debator_input)
+        
+        # 综合辩论结果
+        debate_synthesis = self._synthesize_debate_results(
+            conservative_debate, neutral_debate, aggressive_debate
+        )
+        
+        # 将辩论结果整合到研究总结中
+        research_summary["debate_synthesis"] = debate_synthesis
+        research_summary["conservative_debate"] = conservative_debate
+        research_summary["neutral_debate"] = neutral_debate
+        research_summary["aggressive_debate"] = aggressive_debate
+        
+        self.current_state["research_summary"] = research_summary
+        self.current_state["debate_synthesis"] = debate_synthesis
     
     def _phase4_risk_assessment(self):
         """第四阶段：风险评估"""
@@ -251,6 +302,167 @@ class CryptoTradingGraph:
         
         self.current_state["trading_decision"] = self.crypto_trader.make_decision(decision_inputs)
     
+    def _synthesize_debate_results(self, conservative_debate: Dict[str, Any], 
+                                 neutral_debate: Dict[str, Any], 
+                                 aggressive_debate: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        综合三个辩论员的辩论结果
+        
+        Args:
+            conservative_debate: 保守型辩论员结果
+            neutral_debate: 中性型辩论员结果
+            aggressive_debate: 激进型辩论员结果
+            
+        Returns:
+            综合辩论结果
+        """
+        try:
+            # 提取关键指标
+            conservative_risk = conservative_debate.get("risk_level", "medium")
+            neutral_risk = neutral_debate.get("risk_level", "medium")
+            aggressive_risk = aggressive_debate.get("risk_level", "medium")
+            
+            conservative_confidence = conservative_debate.get("confidence", 0.5)
+            neutral_confidence = neutral_debate.get("confidence", 0.5)
+            aggressive_confidence = aggressive_debate.get("confidence", 0.5)
+            
+            # 计算综合风险等级
+            risk_scores = {"low": 1, "medium": 2, "high": 3}
+            conservative_score = risk_scores.get(conservative_risk, 2)
+            neutral_score = risk_scores.get(neutral_risk, 2)
+            aggressive_score = risk_scores.get(aggressive_risk, 2)
+            
+            # 基于置信度加权计算综合风险评分
+            total_confidence = conservative_confidence + neutral_confidence + aggressive_confidence
+            if total_confidence > 0:
+                weighted_score = (
+                    conservative_score * conservative_confidence +
+                    neutral_score * neutral_confidence +
+                    aggressive_score * aggressive_confidence
+                ) / total_confidence
+            else:
+                weighted_score = 2
+            
+            # 确定综合风险等级
+            if weighted_score <= 1.5:
+                overall_risk = "low"
+            elif weighted_score <= 2.5:
+                overall_risk = "medium"
+            else:
+                overall_risk = "high"
+            
+            # 综合关键观察
+            all_observations = []
+            for debate in [conservative_debate, neutral_debate, aggressive_debate]:
+                observations = debate.get("key_observations", [])
+                if isinstance(observations, list):
+                    all_observations.extend(observations)
+                elif isinstance(observations, str):
+                    all_observations.append(observations)
+            
+            # 综合策略建议
+            strategy_synthesis = {
+                "conservative_strategies": conservative_debate.get("conservative_strategies", []),
+                "neutral_strategies": neutral_debate.get("balanced_strategies", []),
+                "aggressive_strategies": aggressive_debate.get("aggressive_strategies", []),
+                "risk_management": {
+                    "overall_risk_level": overall_risk,
+                    "risk_score": weighted_score,
+                    "confidence_alignment": {
+                        "conservative": conservative_confidence,
+                        "neutral": neutral_confidence,
+                        "aggressive": aggressive_confidence
+                    }
+                }
+            }
+            
+            # 生成辩论总结
+            synthesis_result = {
+                "overall_risk_assessment": overall_risk,
+                "comprehensive_risk_score": round(weighted_score, 2),
+                "debate_consensus": self._calculate_debate_consensus(
+                    conservative_debate, neutral_debate, aggressive_debate
+                ),
+                "key_insights": all_observations[:10],  # 限制为前10个重要观察
+                "strategy_recommendations": strategy_synthesis,
+                "individual_assessments": {
+                    "conservative": {
+                        "risk_level": conservative_risk,
+                        "confidence": conservative_confidence,
+                        "expected_return": conservative_debate.get("expected_return", "low")
+                    },
+                    "neutral": {
+                        "risk_level": neutral_risk,
+                        "confidence": neutral_confidence,
+                        "expected_return": neutral_debate.get("expected_return", "moderate")
+                    },
+                    "aggressive": {
+                        "risk_level": aggressive_risk,
+                        "confidence": aggressive_confidence,
+                        "expected_return": aggressive_debate.get("expected_return", "high")
+                    }
+                },
+                "timestamp": datetime.now().isoformat()
+            }
+            
+            return synthesis_result
+            
+        except Exception as e:
+            logger.error(f"Error synthesizing debate results: {str(e)}")
+            return {
+                "overall_risk_assessment": "medium",
+                "comprehensive_risk_score": 2.0,
+                "debate_consensus": "low",
+                "key_insights": ["Error in debate synthesis"],
+                "strategy_recommendations": {},
+                "individual_assessments": {},
+                "timestamp": datetime.now().isoformat(),
+                "error": str(e)
+            }
+    
+    def _calculate_debate_consensus(self, conservative_debate, neutral_debate, aggressive_debate):
+        """
+        计算辩论员之间的共识程度
+        
+        Returns:
+            consensus_level: "high", "medium", "low"
+        """
+        try:
+            # 基于风险等级评估共识
+            risk_levels = [
+                conservative_debate.get("risk_level", "medium"),
+                neutral_debate.get("risk_level", "medium"),
+                aggressive_debate.get("risk_level", "medium")
+            ]
+            
+            # 计算风险等级一致性
+            unique_risks = set(risk_levels)
+            risk_consensus = 1.0 / len(unique_risks) if unique_risks else 1.0
+            
+            # 基于置信度评估共识
+            confidences = [
+                conservative_debate.get("confidence", 0.5),
+                neutral_debate.get("confidence", 0.5),
+                aggressive_debate.get("confidence", 0.5)
+            ]
+            
+            confidence_variance = np.var(confidences) if confidences else 1.0
+            confidence_consensus = 1.0 / (1.0 + confidence_variance)
+            
+            # 综合共识评分
+            overall_consensus = (risk_consensus + confidence_consensus) / 2.0
+            
+            if overall_consensus >= 0.7:
+                return "high"
+            elif overall_consensus >= 0.4:
+                return "medium"
+            else:
+                return "low"
+                
+        except Exception as e:
+            logger.error(f"Error calculating debate consensus: {str(e)}")
+            return "low"
+
     def _generate_final_decision(self) -> Dict[str, Any]:
         """生成最终决策"""
         trading_decision = self.current_state.get("trading_decision", {})

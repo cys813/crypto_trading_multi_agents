@@ -45,9 +45,9 @@ class CryptoRiskManager(StandardAIAnalysisMixin):
         
         # 初始化统一LLM服务
         from src.crypto_trading_agents.services.llm_service import initialize_llm_service
-        from src.crypto_trading_agents.config.ai_analysis_config import get_unified_llm_service_config
+        from src.crypto_trading_agents.unified_config import get_unified_config
         
-        llm_config = get_unified_llm_service_config()
+        llm_config = get_unified_config().get("llm_service_config")
         initialize_llm_service(llm_config)
         
         # 风险阈值配置
@@ -65,6 +65,68 @@ class CryptoRiskManager(StandardAIAnalysisMixin):
         
         # 风险模型配置
         self.risk_models = self.risk_config.get("risk_models", ["var", "stress_test", "scenario"])
+    
+    def assess(self, risk_factors: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        评估风险因素
+        
+        Args:
+            risk_factors: 风险因素字典
+            
+        Returns:
+            风险评估结果
+        """
+        try:
+            # 将risk_factors转换为collect_data的格式
+            symbol = risk_factors.get("symbol", "BTC/USDT")
+            end_date = datetime.now().strftime("%Y-%m-%d")
+            
+            # 构造风险数据
+            risk_data = {
+                "symbol": symbol,
+                "start_date": (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d"),
+                "end_date": end_date,
+                "market_risk_data": risk_factors.get("market_risk", {}),
+                "liquidity_risk_data": risk_factors.get("liquidity_risk", {}),
+                "credit_risk_data": risk_factors.get("credit_risk", {}),
+                "operational_risk_data": risk_factors.get("operational_risk", {}),
+                "regulatory_risk_data": risk_factors.get("regulatory_risk", {}),
+                "portfolio_risk_data": risk_factors.get("portfolio_risk", {}), 
+                "systemic_risk_data": risk_factors.get("systemic_risk", {}),
+            }
+            
+            # 调用analyze方法进行分析
+            analysis_result = self.analyze(risk_data)
+            
+            if "error" in analysis_result:
+                return {
+                    "overall_score": 0.5,
+                    "risk_level": "medium",
+                    "key_risks": ["风险评估失败"],
+                    "error": analysis_result["error"]
+                }
+            
+            # 提取关键风险信息
+            overall_risk = analysis_result.get("overall_risk", {})
+            risk_alerts = analysis_result.get("risk_alerts", [])
+            
+            return {
+                "overall_score": overall_risk.get("overall_score", 0.5),
+                "risk_level": overall_risk.get("risk_level", "medium"),
+                "key_risks": [alert.get("message", "") for alert in risk_alerts[:3]],
+                "dominant_risk": overall_risk.get("dominant_risk_type", "market"),
+                "risk_dashboard": analysis_result.get("risk_dashboard", {}),
+                "confidence": analysis_result.get("confidence", 0.5),
+            }
+            
+        except Exception as e:
+            logger.error(f"风险评估失败: {str(e)}")
+            return {
+                "overall_score": 0.5,
+                "risk_level": "medium",
+                "key_risks": ["风险评估过程出错"],
+                "error": str(e)
+            }
     
     def collect_data(self, symbol: str, end_date: str) -> Dict[str, Any]:
         """
@@ -777,10 +839,6 @@ class CryptoRiskManager(StandardAIAnalysisMixin):
             "var_impact": portfolio_loss * 1.2,
             "liquidity_impact": abs(liquidity_shock),
         }
-    
-    def _calculate_risk_level(self, score: float) -> str:
-        """根据分数计算风险等级"""
-        return self._score_to_risk_level(score)
     
     def _risk_level_to_score(self, risk_level: str) -> float:
         """风险等级转换为分数"""

@@ -307,13 +307,13 @@ def test_ai_analysis_mixin():
 def test_analyst_integration(analyst_class, analyst_name, test_data):
     """测试分析师集成"""
     try:
-        from src.crypto_trading_agents.config.ai_analysis_config import get_unified_llm_service_config
+        from src.crypto_trading_agents.unified_config import get_unified_config
         
         print(f"\n📊 测试{analyst_name}集成")
         print("-" * 40)
         
         # 获取配置
-        config = get_unified_llm_service_config()
+        config = get_unified_config()
         
         # 创建分析师
         analyst = analyst_class(config)

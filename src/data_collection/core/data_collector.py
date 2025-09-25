@@ -21,6 +21,9 @@ from ..models.market_data import MarketData, OHLCVData, OrderBookData, TradeData
 from ..utils.metrics import MetricsCollector
 from ..utils.validation import DataValidator, ValidationReport
 from ..utils.helpers import format_timestamp, normalize_symbol, get_timeframe_seconds
+from ..collectors.orderbook_collector import OrderBookCollector
+from ..collectors.trades_collector import TradesCollector
+from ..storage.redis import RedisStorage
 
 
 @dataclass
@@ -48,10 +51,15 @@ class DataCollector:
         self.data_processor = DataProcessor()
         self.metrics = MetricsCollector()
         self.validator = DataValidator()
+        self.redis = RedisStorage()
 
         # Collection tasks
         self.tasks: Dict[str, CollectionTask] = {}
         self.running_tasks: Dict[str, asyncio.Task] = {}
+
+        # Specialized collectors
+        self.orderbook_collector = OrderBookCollector(self.exchange_manager, self.data_processor)
+        self.trades_collector = TradesCollector(self.exchange_manager, self.data_processor)
 
         # Collection statistics
         self.stats = {
@@ -59,16 +67,30 @@ class DataCollector:
             'successful_collections': 0,
             'failed_collections': 0,
             'data_points_collected': 0,
-            'last_collection_time': None
+            'last_collection_time': None,
+            'ohlcv_collections': 0,
+            'ticker_collections': 0,
+            'orderbook_collections': 0,
+            'trades_collections': 0
         }
 
         # Rate limiting and scheduling
         self.collection_interval = self.settings.DATA_COLLECTION_INTERVAL
         self.max_concurrent_collections = 50
 
+        # Intelligent scheduling
+        self.priority_queues = {
+            'high': [],
+            'medium': [],
+            'low': []
+        }
+        self.load_balancer = LoadBalancer()
+        self.quality_monitor = DataQualityMonitor(self)
+
         # Background tasks
         self.scheduler_task = None
         self.monitor_task = None
+        self.quality_task = None
 
     async def start(self):
         """Start the data collection system."""
@@ -85,6 +107,13 @@ class DataCollector:
 
         # Start monitoring
         await self.start_monitoring()
+
+        # Start specialized collectors
+        await self.orderbook_collector.start()
+        await self.trades_collector.start()
+
+        # Start quality monitoring
+        await self.start_quality_monitoring()
 
         # Initialize default collection tasks
         await self.initialize_default_tasks()
@@ -124,6 +153,13 @@ class DataCollector:
 
         # Stop metrics cleanup
         await self.metrics.stop_cleanup_task()
+
+        # Stop specialized collectors
+        await self.orderbook_collector.stop()
+        await self.trades_collector.stop()
+
+        # Stop quality monitoring
+        await self.stop_quality_monitoring()
 
         self.logger.info("Data collection system stopped")
 
@@ -337,7 +373,18 @@ class DataCollector:
             self.stats['last_collection_time'] = start_time
 
             if data:
-                self.stats['data_points_collected'] += len(data) if isinstance(data, list) else 1
+                data_points = len(data) if isinstance(data, list) else 1
+                self.stats['data_points_collected'] += data_points
+
+                # Update type-specific statistics
+                if task.data_type == 'ohlcv':
+                    self.stats['ohlcv_collections'] += 1
+                elif task.data_type == 'ticker':
+                    self.stats['ticker_collections'] += 1
+                elif task.data_type == 'orderbook':
+                    self.stats['orderbook_collections'] += 1
+                elif task.data_type == 'trades':
+                    self.stats['trades_collections'] += 1
 
             # Execute callback if provided
             if task.callback:
@@ -668,4 +715,356 @@ class DataCollector:
                 }
                 for task in self.tasks.values()
             ]
+        }
+
+    async def start_quality_monitoring(self):
+        """Start data quality monitoring."""
+        async def quality_monitor():
+            while True:
+                try:
+                    await self.quality_monitor.check_data_quality()
+                    await asyncio.sleep(60)  # Check every minute
+                except Exception as e:
+                    self.logger.error(f"Quality monitoring error: {e}")
+                    await asyncio.sleep(30)
+
+        self.quality_task = asyncio.create_task(quality_monitor())
+
+    async def stop_quality_monitoring(self):
+        """Stop data quality monitoring."""
+        if self.quality_task:
+            self.quality_task.cancel()
+            try:
+                await self.quality_task
+            except asyncio.CancelledError:
+                pass
+
+    async def get_incremental_ohlcv(self, exchange: str, symbol: str, timeframe: str,
+                                  since: Optional[int] = None) -> List[List]:
+        """Get incremental OHLCV data since last timestamp."""
+        try:
+            # Try to get last timestamp from cache
+            cache_key = f"last_timestamp:{exchange}:{symbol}:{timeframe}"
+            last_timestamp = await self.redis.get(cache_key)
+
+            # Use provided timestamp or cached timestamp
+            since_timestamp = since or (int(last_timestamp) if last_timestamp else None)
+
+            # Fetch OHLCV data
+            ohlcv_data = await self.exchange_manager.get_ohlcv(
+                exchange, symbol, timeframe, since=since_timestamp, limit=1000
+            )
+
+            if ohlcv_data:
+                # Update last timestamp in cache
+                latest_timestamp = ohlcv_data[-1][0]  # First element is timestamp
+                await self.redis.set(cache_key, str(latest_timestamp), ttl=86400)  # 24 hour TTL
+
+            return ohlcv_data
+
+        except Exception as e:
+            self.logger.error(f"Failed to get incremental OHLCV data: {e}")
+            return []
+
+    async def prioritize_tasks(self):
+        """Intelligent task prioritization based on multiple factors."""
+        current_time = datetime.now()
+
+        for task in self.tasks.values():
+            if not task.is_active:
+                continue
+
+            # Calculate priority score based on multiple factors
+            priority_score = 0
+
+            # Base priority from data type
+            if task.data_type == 'ticker':
+                priority_score += 30  # High priority for real-time price
+            elif task.data_type == 'orderbook':
+                priority_score += 25  # High priority for liquidity data
+            elif task.data_type == 'trades':
+                priority_score += 20  # Medium priority for trade data
+            elif task.data_type == 'ohlcv':
+                priority_score += 10  # Lower priority for historical data
+
+            # Priority from collection interval (more frequent = higher priority)
+            if task.interval <= 5:
+                priority_score += 20
+            elif task.interval <= 30:
+                priority_score += 15
+            elif task.interval <= 300:
+                priority_score += 10
+
+            # Priority from data freshness
+            if task.last_run:
+                time_since_run = (current_time - task.last_run).total_seconds()
+                if time_since_run > task.interval * 2:
+                    priority_score += 15  # Overdue tasks get higher priority
+                elif time_since_run > task.interval:
+                    priority_score += 10
+
+            # Priority from error rate
+            if hasattr(task, 'error_count') and task.error_count > 3:
+                priority_score -= 10  # Reduce priority for error-prone tasks
+
+            # Priority from exchange health
+            exchange_health = await self.exchange_manager.get_exchange_health(task.exchange)
+            if exchange_health.get('healthy', True):
+                priority_score += 5  # Prefer healthy exchanges
+
+            # Assign to priority queue
+            if priority_score >= 50:
+                self.priority_queues['high'].append(task)
+            elif priority_score >= 30:
+                self.priority_queues['medium'].append(task)
+            else:
+                self.priority_queues['low'].append(task)
+
+        # Sort each queue by priority score
+        for queue in self.priority_queues.values():
+            queue.sort(key=lambda t: self._calculate_task_priority(t), reverse=True)
+
+    def _calculate_task_priority(self, task: CollectionTask) -> float:
+        """Calculate priority score for a task."""
+        current_time = datetime.now()
+        score = 0.0
+
+        # Data type priority
+        type_priority = {
+            'ticker': 30,
+            'orderbook': 25,
+            'trades': 20,
+            'ohlcv': 10
+        }
+        score += type_priority.get(task.data_type, 5)
+
+        # Interval priority
+        if task.interval <= 5:
+            score += 20
+        elif task.interval <= 30:
+            score += 15
+        elif task.interval <= 300:
+            score += 10
+
+        # Freshness priority
+        if task.last_run:
+            time_since_run = (current_time - task.last_run).total_seconds()
+            if time_since_run > task.interval * 2:
+                score += 15
+            elif time_since_run > task.interval:
+                score += 10
+
+        return score
+
+
+class LoadBalancer:
+    """Load balancer for distributing collection tasks across exchanges."""
+
+    def __init__(self):
+        self.exchange_loads = {}
+        self.exchange_capacities = {}
+        self.logger = logging.getLogger(__name__)
+
+    async def get_exchange_load(self, exchange: str) -> float:
+        """Get current load for an exchange."""
+        return self.exchange_loads.get(exchange, 0.0)
+
+    async def update_exchange_load(self, exchange: str, load_change: float):
+        """Update load for an exchange."""
+        current_load = self.exchange_loads.get(exchange, 0.0)
+        self.exchange_loads[exchange] = max(0.0, current_load + load_change)
+
+    async def get_best_exchange(self, exchanges: List[str]) -> Optional[str]:
+        """Get the exchange with lowest current load."""
+        if not exchanges:
+            return None
+
+        # Get loads for all exchanges
+        exchange_loads = {}
+        for exchange in exchanges:
+            load = await self.get_exchange_load(exchange)
+            capacity = self.exchange_capacities.get(exchange, 1.0)
+            exchange_loads[exchange] = load / capacity if capacity > 0 else float('inf')
+
+        # Return exchange with lowest load
+        return min(exchange_loads, key=exchange_loads.get)
+
+    async def can_handle_task(self, exchange: str, task_weight: float = 1.0) -> bool:
+        """Check if exchange can handle additional load."""
+        current_load = await self.get_exchange_load(exchange)
+        capacity = self.exchange_capacities.get(exchange, 1.0)
+        return (current_load + task_weight) <= capacity
+
+
+class DataQualityMonitor:
+    """Real-time data quality monitoring."""
+
+    def __init__(self, data_collector):
+        self.data_collector = data_collector
+        self.logger = logging.getLogger(__name__)
+        self.quality_alerts = []
+        self.quality_thresholds = {
+            'accuracy': 0.95,
+            'completeness': 0.95,
+            'timeliness': 0.90,
+            'consistency': 0.90
+        }
+
+    async def check_data_quality(self):
+        """Check overall data quality across all collections."""
+        try:
+            # Check OHLCV data quality
+            await self._check_ohlcv_quality()
+
+            # Check ticker data quality
+            await self._check_ticker_quality()
+
+            # Check order book quality
+            await self._check_orderbook_quality()
+
+            # Check trades data quality
+            await self._check_trades_quality()
+
+            # Log quality summary
+            await self._log_quality_summary()
+
+        except Exception as e:
+            self.logger.error(f"Data quality check failed: {e}")
+
+    async def _check_ohlcv_quality(self):
+        """Check OHLCV data quality."""
+        try:
+            # Get recent OHLCV quality metrics
+            recent_metrics = self.data_collector.metrics.get_recent_metrics('ohlcv')
+
+            if not recent_metrics:
+                return
+
+            # Calculate average quality scores
+            avg_accuracy = sum(m.get('accuracy_score', 0) for m in recent_metrics) / len(recent_metrics)
+            avg_completeness = sum(m.get('completeness_score', 0) for m in recent_metrics) / len(recent_metrics)
+            avg_timeliness = sum(m.get('timeliness_score', 0) for m in recent_metrics) / len(recent_metrics)
+
+            # Check against thresholds
+            if avg_accuracy < self.quality_thresholds['accuracy']:
+                self._add_quality_alert('OHLCV accuracy low', avg_accuracy, 'accuracy')
+
+            if avg_completeness < self.quality_thresholds['completeness']:
+                self._add_quality_alert('OHLCV completeness low', avg_completeness, 'completeness')
+
+            if avg_timeliness < self.quality_thresholds['timeliness']:
+                self._add_quality_alert('OHLCV timeliness low', avg_timeliness, 'timeliness')
+
+        except Exception as e:
+            self.logger.error(f"OHLCV quality check failed: {e}")
+
+    async def _check_ticker_quality(self):
+        """Check ticker data quality."""
+        try:
+            # Get recent ticker quality metrics
+            recent_metrics = self.data_collector.metrics.get_recent_metrics('ticker')
+
+            if not recent_metrics:
+                return
+
+            # Calculate average quality scores
+            avg_accuracy = sum(m.get('accuracy_score', 0) for m in recent_metrics) / len(recent_metrics)
+
+            # Check against thresholds
+            if avg_accuracy < self.quality_thresholds['accuracy']:
+                self._add_quality_alert('Ticker accuracy low', avg_accuracy, 'accuracy')
+
+        except Exception as e:
+            self.logger.error(f"Ticker quality check failed: {e}")
+
+    async def _check_orderbook_quality(self):
+        """Check order book data quality."""
+        try:
+            # Get order book collector stats
+            orderbook_stats = self.data_collector.orderbook_collector.get_collection_stats()
+
+            # Check success rate
+            if orderbook_stats['statistics']['total_collections'] > 0:
+                success_rate = (orderbook_stats['statistics']['successful_collections'] /
+                               orderbook_stats['statistics']['total_collections'])
+
+                if success_rate < self.quality_thresholds['accuracy']:
+                    self._add_quality_alert('Order book collection success rate low', success_rate, 'collection_rate')
+
+        except Exception as e:
+            self.logger.error(f"Order book quality check failed: {e}")
+
+    async def _check_trades_quality(self):
+        """Check trades data quality."""
+        try:
+            # Get trades collector stats
+            trades_stats = self.data_collector.trades_collector.get_collection_stats()
+
+            # Check success rate
+            if trades_stats['statistics']['total_collections'] > 0:
+                success_rate = (trades_stats['statistics']['successful_collections'] /
+                               trades_stats['statistics']['total_collections'])
+
+                if success_rate < self.quality_thresholds['accuracy']:
+                    self._add_quality_alert('Trades collection success rate low', success_rate, 'collection_rate')
+
+        except Exception as e:
+            self.logger.error(f"Trades quality check failed: {e}")
+
+    def _add_quality_alert(self, message: str, value: float, alert_type: str):
+        """Add a quality alert."""
+        alert = {
+            'timestamp': datetime.now().isoformat(),
+            'message': message,
+            'value': value,
+            'type': alert_type,
+            'severity': 'warning' if value > 0.8 else 'critical'
+        }
+
+        self.quality_alerts.append(alert)
+
+        # Keep only recent alerts (last 100)
+        if len(self.quality_alerts) > 100:
+            self.quality_alerts = self.quality_alerts[-100:]
+
+        # Log alert
+        self.logger.warning(f"Quality Alert: {message} - Value: {value:.3f}")
+
+    async def _log_quality_summary(self):
+        """Log quality summary."""
+        try:
+            total_alerts = len(self.quality_alerts)
+            critical_alerts = len([a for a in self.quality_alerts if a['severity'] == 'critical'])
+
+            if total_alerts > 0:
+                self.logger.info(f"Quality Summary: {total_alerts} alerts, {critical_alerts} critical")
+
+            # Log alerts by type
+            alert_types = {}
+            for alert in self.quality_alerts[-10:]:  # Last 10 alerts
+                alert_type = alert['type']
+                alert_types[alert_type] = alert_types.get(alert_type, 0) + 1
+
+            for alert_type, count in alert_types.items():
+                self.logger.info(f"  {alert_type}: {count} alerts")
+
+        except Exception as e:
+            self.logger.error(f"Failed to log quality summary: {e}")
+
+    def get_quality_alerts(self, limit: int = 50) -> List[Dict]:
+        """Get recent quality alerts."""
+        return self.quality_alerts[-limit:]
+
+    def get_quality_summary(self) -> Dict[str, Any]:
+        """Get quality summary statistics."""
+        total_alerts = len(self.quality_alerts)
+        critical_alerts = len([a for a in self.quality_alerts if a['severity'] == 'critical'])
+        warning_alerts = len([a for a in self.quality_alerts if a['severity'] == 'warning'])
+
+        return {
+            'total_alerts': total_alerts,
+            'critical_alerts': critical_alerts,
+            'warning_alerts': warning_alerts,
+            'recent_alerts': self.get_quality_alerts(10),
+            'thresholds': self.quality_thresholds.copy()
         }

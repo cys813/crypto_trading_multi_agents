@@ -4,7 +4,7 @@ status: backlog
 created: 2025-09-25T09:31:15Z
 progress: 0%
 prd: .claude/prds/新闻收集代理.md
-github: [#13](https://github.com/cys813/crypto_trading_multi_agents/issues/13)
+github: https://github.com/cys813/crypto_trading_multi_agents/issues/13
 ---
 
 # Epic: 新闻收集代理

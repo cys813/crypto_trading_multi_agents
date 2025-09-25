@@ -1,9 +1,9 @@
 ---
 name: 加密货币多agent交易系统
 description: 一个集成8个专门代理的多代理加密货币交易系统，提供完整的系统架构、代理协作机制和集成框架
-status: backlog
+status: epic-created
 created: 2025-09-24T03:57:39Z
-updated: 2025-09-25T01:59:52Z
+updated: 2025-09-25T19:20:00Z
 ---
 
 # PRD: 加密货币多agent交易系统

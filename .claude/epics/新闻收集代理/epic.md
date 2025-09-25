@@ -4,7 +4,7 @@ status: backlog
 created: 2025-09-25T04:51:15Z
 progress: 0%
 prd: .claude/prds/新闻收集代理.md
-github: [Will be updated when synced to GitHub]
+github: #1
 ---
 
 # Epic: 新闻收集代理

@@ -12,7 +12,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
 
-from .config.settings import get_settings
+from .core.config import get_config, config_manager
+from .core.logger import get_logger, logger_manager
+from .core.monitoring import start_metrics_collection, stop_metrics_collection, get_dashboard_data
+from .core.exceptions import error_handler, handle_exceptions, ErrorContext
 from .api import market_router, position_router, order_router
 from .core.data_collector import DataCollector
 from .core.position_manager import PositionManager
@@ -20,12 +23,8 @@ from .core.order_manager import OrderManager
 from .utils.metrics import MetricsCollector
 
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Get logger instance
+logger = get_logger(__name__)
 
 # Global variables
 data_collector = None
@@ -39,14 +38,18 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager."""
     logger.info("Starting Data Collection Agent application")
 
-    # Initialize settings
-    settings = get_settings()
-    logger.info(f"Application settings loaded with log level: {settings.LOG_LEVEL}")
+    # Initialize configuration
+    config = get_config()
+    logger.info(f"Application loaded in {config.environment} environment")
+    logger.info(f"Debug mode: {config.debug}")
 
     # Initialize components
     global data_collector, position_manager, order_manager, metrics_collector
 
     try:
+        # Start metrics collection
+        start_metrics_collection()
+
         # Initialize metrics collector
         metrics_collector = MetricsCollector()
         await metrics_collector.start_cleanup_task()
@@ -65,8 +68,17 @@ async def lifespan(app: FastAPI):
 
         logger.info("All components initialized successfully")
 
+        # Validate configuration
+        validation_errors = config_manager.validate_config()
+        if validation_errors:
+            logger.warning(f"Configuration validation issues: {validation_errors}")
+
     except Exception as e:
         logger.error(f"Failed to initialize components: {e}")
+        error_handler.handle_exception(e, ErrorContext(
+            component="application",
+            operation="startup"
+        ))
         raise
 
     yield
@@ -88,10 +100,20 @@ async def lifespan(app: FastAPI):
         if metrics_collector:
             await metrics_collector.stop_cleanup_task()
 
+        # Stop metrics collection
+        stop_metrics_collection()
+
+        # Cleanup logger resources
+        logger_manager.cleanup()
+
         logger.info("All components stopped successfully")
 
     except Exception as e:
         logger.error(f"Error during shutdown: {e}")
+        error_handler.handle_exception(e, ErrorContext(
+            component="application",
+            operation="shutdown"
+        ))
 
 
 # Create FastAPI application
@@ -171,7 +193,7 @@ async def root():
 @app.get("/api/v1/system/info", tags=["system"])
 async def system_info():
     """Get system information."""
-    settings = get_settings()
+    config = get_config()
 
     try:
         # Get component statistics
@@ -181,16 +203,20 @@ async def system_info():
 
         return {
             "application": {
-                "name": "Crypto Trading Data Collection Agent",
-                "version": "1.0.0",
+                "name": config.app_name,
+                "version": config.version,
+                "environment": config.environment,
+                "debug": config.debug,
                 "uptime": "N/A"  # Could be calculated from startup time
             },
             "settings": {
-                "log_level": settings.LOG_LEVEL,
-                "api_host": settings.API_HOST,
-                "api_port": settings.API_PORT,
-                "max_concurrent_connections": settings.MAX_CONCURRENT_CONNECTIONS,
-                "data_quality_threshold": settings.DATA_QUALITY_THRESHOLD
+                "log_level": config.logging.level,
+                "log_format": config.logging.format,
+                "api_host": config.host,
+                "api_port": config.port,
+                "max_concurrent_connections": config.max_concurrent_connections,
+                "data_quality_threshold": config.data_quality_threshold,
+                "monitoring_enabled": config.monitoring.prometheus_enabled
             },
             "components": {
                 "data_collection": data_collection_stats,
@@ -198,25 +224,41 @@ async def system_info():
                 "order_management": order_summary
             },
             "databases": {
-                "postgres": {
-                    "host": settings.POSTGRES_HOST,
-                    "port": settings.POSTGRES_PORT,
-                    "database": settings.POSTGRES_DB
-                },
                 "timescaledb": {
-                    "host": settings.TIMESCALEDB_HOST,
-                    "port": settings.TIMESCALEDB_PORT,
-                    "database": settings.TIMESCALEDB_DB
+                    "host": config.timescaledb.host,
+                    "port": config.timescaledb.port,
+                    "database": config.timescaledb.database,
+                    "pool_size": config.timescaledb.pool_size
+                },
+                "postgres": {
+                    "host": config.postgresql.host,
+                    "port": config.postgresql.port,
+                    "database": config.postgresql.database,
+                    "pool_size": config.postgresql.pool_size
                 },
                 "redis": {
-                    "host": settings.REDIS_HOST,
-                    "port": settings.REDIS_PORT
+                    "host": config.redis.host,
+                    "port": config.redis.port,
+                    "database": config.redis.database,
+                    "pool_size": config.redis.pool_size
                 }
+            },
+            "exchanges": {
+                name: {
+                    "enabled": exchange_config.enabled,
+                    "sandbox": exchange_config.sandbox,
+                    "rate_limit": exchange_config.rate_limit
+                }
+                for name, exchange_config in config.exchanges.items()
             }
         }
 
     except Exception as e:
         logger.error(f"Failed to get system info: {e}")
+        error_handler.handle_exception(e, ErrorContext(
+            component="api",
+            operation="system_info"
+        ))
         raise HTTPException(status_code=500, detail="Failed to get system information")
 
 
@@ -225,20 +267,63 @@ async def system_info():
 async def get_system_metrics():
     """Get system metrics."""
     try:
-        metrics = {}
-
-        if metrics_collector:
-            metrics["system"] = metrics_collector.get_system_metrics()
-            metrics["requests"] = metrics_collector.get_request_metrics()
-            metrics["data_quality"] = metrics_collector.get_data_quality_metrics()
-            metrics["top_errors"] = metrics_collector.get_top_errors()
-            metrics["slowest_endpoints"] = metrics_collector.get_slowest_endpoints()
-
-        return metrics
+        return get_dashboard_data()
 
     except Exception as e:
         logger.error(f"Failed to get system metrics: {e}")
+        error_handler.handle_exception(e, ErrorContext(
+            component="api",
+            operation="get_metrics"
+        ))
         raise HTTPException(status_code=500, detail="Failed to get system metrics")
+
+
+# Configuration reload endpoint
+@app.post("/api/v1/system/reload-config", tags=["system"])
+async def reload_config():
+    """Reload configuration."""
+    try:
+        new_config = config_manager.reload()
+
+        # Reload logging configuration
+        logger_manager.reload_logging()
+
+        return {
+            "message": "Configuration reloaded successfully",
+            "environment": new_config.environment,
+            "debug": new_config.debug,
+            "log_level": new_config.logging.level
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to reload configuration: {e}")
+        error_handler.handle_exception(e, ErrorContext(
+            component="api",
+            operation="reload_config"
+        ))
+        raise HTTPException(status_code=500, detail="Failed to reload configuration")
+
+
+# Configuration validation endpoint
+@app.get("/api/v1/system/config-validation", tags=["system"])
+async def validate_config():
+    """Validate current configuration."""
+    try:
+        errors = config_manager.validate_config()
+
+        return {
+            "valid": len(errors) == 0,
+            "errors": errors,
+            "config_summary": config_manager.get_environment_config()
+        }
+
+    except Exception as e:
+        logger.error(f"Failed to validate configuration: {e}")
+        error_handler.handle_exception(e, ErrorContext(
+            component="api",
+            operation="validate_config"
+        ))
+        raise HTTPException(status_code=500, detail="Failed to validate configuration")
 
 
 # Exception handlers
@@ -276,32 +361,32 @@ async def general_exception_handler(request, exc):
 # Development server entry point
 def run_dev_server():
     """Run the development server."""
-    settings = get_settings()
+    config = get_config()
 
-    logger.info(f"Starting development server on {settings.API_HOST}:{settings.API_PORT}")
+    logger.info(f"Starting development server on {config.host}:{config.port}")
 
     uvicorn.run(
         "src.data_collection.main:app",
-        host=settings.API_HOST,
-        port=settings.API_PORT,
+        host=config.host,
+        port=config.port,
         reload=True,
-        log_level=settings.LOG_LEVEL.lower()
+        log_level=config.logging.level.lower()
     )
 
 
 # Production server entry point
 def run_prod_server():
     """Run the production server."""
-    settings = get_settings()
+    config = get_config()
 
-    logger.info(f"Starting production server on {settings.API_HOST}:{settings.API_PORT}")
+    logger.info(f"Starting production server on {config.host}:{config.port}")
 
     uvicorn.run(
         app,
-        host=settings.API_HOST,
-        port=settings.API_PORT,
-        workers=settings.API_WORKERS,
-        log_level=settings.LOG_LEVEL.lower()
+        host=config.host,
+        port=config.port,
+        workers=4,  # Default workers for production
+        log_level=config.logging.level.lower()
     )
 
 

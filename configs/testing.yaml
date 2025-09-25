@@ -1,0 +1,123 @@
+# Testing Configuration for Data Collection Agent
+# This configuration is optimized for automated testing and CI/CD environments
+
+# Application settings
+app:
+  name: "data_collection_agent_test"
+  version: "1.0.0"
+  debug: true
+  host: "127.0.0.1"
+  port: 8001
+  environment: "testing"
+
+# Database configurations
+database:
+  timescaledb:
+    host: "localhost"
+    port: 5432
+    database: "crypto_timescaledb_test"
+    username: "postgres"
+    password: "password"
+    pool_size: 5
+    max_overflow: 2
+    connect_timeout: 10
+    command_timeout: 15
+
+  postgresql:
+    host: "localhost"
+    port: 5432
+    database: "crypto_postgres_test"
+    username: "postgres"
+    password: "password"
+    pool_size: 3
+    max_overflow: 1
+    connect_timeout: 10
+    command_timeout: 15
+
+  redis:
+    host: "localhost"
+    port: 6379
+    database: 1
+    username: ""
+    password: ""
+    pool_size: 5
+    max_overflow: 2
+    connect_timeout: 5
+
+# Exchange configurations
+exchanges:
+  binance:
+    enabled: true
+    sandbox: true
+    api_key: "${BINANCE_TEST_API_KEY}"
+    api_secret: "${BINANCE_TEST_API_SECRET}"
+    rate_limit: 10
+    timeout: 5000
+    enable_rate_limit: true
+    options:
+      defaultType: "spot"
+      test: true
+
+  okx:
+    enabled: true
+    sandbox: true
+    api_key: "${OKX_TEST_API_KEY}"
+    api_secret: "${OKX_TEST_API_SECRET}"
+    passphrase: "${OKX_TEST_PASSPHRASE}"
+    rate_limit: 5
+    timeout: 5000
+    enable_rate_limit: true
+    options:
+      defaultType: "spot"
+      sandbox: true
+
+  huobi:
+    enabled: false
+    sandbox: true
+    api_key: "${HUOBI_TEST_API_KEY}"
+    api_secret: "${HUOBI_TEST_API_SECRET}"
+    rate_limit: 10
+    timeout: 5000
+    enable_rate_limit: true
+    options:
+      defaultType: "spot"
+
+# Monitoring configuration
+monitoring:
+  prometheus_enabled: false
+  prometheus_port: 9091
+  prometheus_path: "/metrics"
+  grafana_enabled: false
+  grafana_host: "localhost"
+  grafana_port: 3000
+
+# Logging configuration
+logging:
+  level: "DEBUG"
+  format: "text"
+  output: ["console"]
+  file_path: "logs/testing.log"
+  max_file_size: "10MB"
+  backup_count: 3
+  structured_logging: false
+
+# Data collection configuration
+collector:
+  market_data_enabled: true
+  positions_enabled: true
+  orders_enabled: true
+  symbols: ["BTC/USDT", "ETH/USDT"]
+  timeframes: ["1m", "5m"]
+  sync_interval: 30
+  order_book_depth: 5
+  trade_limit: 10
+
+# Performance settings
+max_concurrent_connections: 10
+request_timeout: 10
+cache_ttl: 30
+
+# Quality control
+data_quality_threshold: 0.9
+max_retries: 2
+retry_delay: 500

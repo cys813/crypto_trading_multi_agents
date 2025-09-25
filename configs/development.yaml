@@ -1,0 +1,123 @@
+# Development Configuration for Data Collection Agent
+# This configuration is optimized for development and testing environments
+
+# Application settings
+app:
+  name: "data_collection_agent"
+  version: "1.0.0"
+  debug: true
+  host: "0.0.0.0"
+  port: 8000
+  environment: "development"
+
+# Database configurations
+database:
+  timescaledb:
+    host: "localhost"
+    port: 5432
+    database: "crypto_timescaledb_dev"
+    username: "postgres"
+    password: "password"
+    pool_size: 10
+    max_overflow: 5
+    connect_timeout: 30
+    command_timeout: 30
+
+  postgresql:
+    host: "localhost"
+    port: 5432
+    database: "crypto_postgres_dev"
+    username: "postgres"
+    password: "password"
+    pool_size: 5
+    max_overflow: 3
+    connect_timeout: 30
+    command_timeout: 30
+
+  redis:
+    host: "localhost"
+    port: 6379
+    database: 0
+    username: ""
+    password: ""
+    pool_size: 10
+    max_overflow: 5
+    connect_timeout: 10
+
+# Exchange configurations
+exchanges:
+  binance:
+    enabled: true
+    sandbox: true
+    api_key: "${BINANCE_TEST_API_KEY}"
+    api_secret: "${BINANCE_TEST_API_SECRET}"
+    rate_limit: 100
+    timeout: 10000
+    enable_rate_limit: true
+    options:
+      defaultType: "spot"
+      test: true
+
+  okx:
+    enabled: true
+    sandbox: true
+    api_key: "${OKX_TEST_API_KEY}"
+    api_secret: "${OKX_TEST_API_SECRET}"
+    passphrase: "${OKX_TEST_PASSPHRASE}"
+    rate_limit: 20
+    timeout: 10000
+    enable_rate_limit: true
+    options:
+      defaultType: "spot"
+      sandbox: true
+
+  huobi:
+    enabled: false
+    sandbox: true
+    api_key: "${HUOBI_TEST_API_KEY}"
+    api_secret: "${HUOBI_TEST_API_SECRET}"
+    rate_limit: 100
+    timeout: 10000
+    enable_rate_limit: true
+    options:
+      defaultType: "spot"
+
+# Monitoring configuration
+monitoring:
+  prometheus_enabled: true
+  prometheus_port: 9090
+  prometheus_path: "/metrics"
+  grafana_enabled: false
+  grafana_host: "localhost"
+  grafana_port: 3000
+
+# Logging configuration
+logging:
+  level: "DEBUG"
+  format: "json"
+  output: ["console", "file"]
+  file_path: "logs/development.log"
+  max_file_size: "50MB"
+  backup_count: 5
+  structured_logging: true
+
+# Data collection configuration
+collector:
+  market_data_enabled: true
+  positions_enabled: true
+  orders_enabled: true
+  symbols: ["BTC/USDT", "ETH/USDT", "BNB/USDT"]
+  timeframes: ["1m", "5m", "15m", "1h"]
+  sync_interval: 10
+  order_book_depth: 10
+  trade_limit: 100
+
+# Performance settings
+max_concurrent_connections: 100
+request_timeout: 30
+cache_ttl: 60
+
+# Quality control
+data_quality_threshold: 0.95
+max_retries: 5
+retry_delay: 1000

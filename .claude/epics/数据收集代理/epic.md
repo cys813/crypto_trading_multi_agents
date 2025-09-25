@@ -1,8 +1,9 @@
 ---
 name: 数据收集代理
-status: backlog
+status: completed
 created: 2025-09-25T08:58:34Z
-progress: 0%
+updated: 2025-09-25T21:55:00Z
+progress: 100%
 prd: .claude/prds/数据收集代理.md
 github: https://github.com/cys813/crypto_trading_multi_agents/issues/2
 worktree: epic/数据收集代理

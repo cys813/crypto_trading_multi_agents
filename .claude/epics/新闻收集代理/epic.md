@@ -1,8 +1,8 @@
 ---
 name: 新闻收集代理
-status: backlog
+status: in_progress
 created: 2025-09-25T09:31:15Z
-progress: 0%
+progress: 25%
 prd: .claude/prds/新闻收集代理.md
 github: https://github.com/cys813/crypto_trading_multi_agents/issues/13
 ---

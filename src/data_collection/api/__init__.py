@@ -8,9 +8,11 @@ position information, and order management functionality.
 from .market_api import market_router
 from .position_api import position_router
 from .order_api import order_router
+from .exchange_manager_api import exchange_router
 
 __all__ = [
     "market_router",
     "position_router",
-    "order_router"
+    "order_router",
+    "exchange_router"
 ]

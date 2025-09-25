@@ -222,11 +222,25 @@ class ExchangeRateLimitError(ExchangeError):
                         retry_after=retry_after, **kwargs)
 
 
+class RateLimitExceededError(ExchangeRateLimitError):
+    """Rate limit exceeded error."""
+
+    def __init__(self, message: str, retry_after: float = None, **kwargs):
+        super().__init__(message, retry_after=retry_after, **kwargs)
+
+
 class ExchangeAuthenticationError(ExchangeError):
     """Exchange authentication errors."""
 
     def __init__(self, message: str, **kwargs):
         super().__init__(message, error_code=ErrorCode.EXCHANGE_AUTH, **kwargs)
+
+
+class ExchangeUnavailableError(ExchangeError):
+    """Exchange unavailable error."""
+
+    def __init__(self, message: str, **kwargs):
+        super().__init__(message, error_code=ErrorCode.EXCHANGE_CONNECTION, recoverable=False, **kwargs)
 
 
 # Network exceptions

@@ -16,7 +16,7 @@ from .core.config import get_config, config_manager
 from .core.logger import get_logger, logger_manager
 from .core.monitoring import start_metrics_collection, stop_metrics_collection, get_dashboard_data
 from .core.exceptions import error_handler, handle_exceptions, ErrorContext
-from .api import market_router, position_router, order_router
+from .api import market_router, position_router, order_router, exchange_router
 from .core.data_collector import DataCollector
 from .core.position_manager import PositionManager
 from .core.order_manager import OrderManager
@@ -140,6 +140,7 @@ app.add_middleware(
 app.include_router(market_router)
 app.include_router(position_router)
 app.include_router(order_router)
+app.include_router(exchange_router)
 
 
 # Health check endpoint

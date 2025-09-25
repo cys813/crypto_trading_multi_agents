@@ -1,0 +1,283 @@
+# Enhanced Exchange Manager Configuration
+# This configuration provides advanced multi-exchange management capabilities
+
+app:
+  name: "data_collection_agent"
+  version: "1.0.0"
+  debug: false
+  environment: "production"
+
+# Database configurations
+timescaledb:
+  host: "${TIMESCALEDB_HOST:localhost}"
+  port: ${TIMESCALEDB_PORT:5432}
+  database: "${TIMESCALEDB_DB:crypto_trading}"
+  username: "${TIMESCALEDB_USER:postgres}"
+  password: "${TIMESCALEDB_PASSWORD:password}"
+  pool_size: 20
+  max_overflow: 10
+  connect_timeout: 30
+  command_timeout: 30
+
+postgresql:
+  host: "${POSTGRES_HOST:localhost}"
+  port: ${POSTGRES_PORT:5432}
+  database: "${POSTGRES_DB:crypto_trading}"
+  username: "${POSTGRES_USER:postgres}"
+  password: "${POSTGRES_PASSWORD:password}"
+  pool_size: 20
+  max_overflow: 10
+  connect_timeout: 30
+  command_timeout: 30
+
+redis:
+  host: "${REDIS_HOST:localhost}"
+  port: ${REDIS_PORT:6379}
+  password: "${REDIS_PASSWORD:}"
+  database: ${REDIS_DB:0}
+  pool_size: 10
+  max_overflow: 5
+  connect_timeout: 10
+  command_timeout: 10
+
+# Exchange configurations
+exchanges:
+  # Binance Configuration
+  binance:
+    enabled: true
+    sandbox: false
+    api_key: "${BINANCE_API_KEY:}"
+    api_secret: "${BINANCE_API_SECRET:}"
+    passphrase: null
+    rate_limit: 1200  # requests per minute
+    timeout: 10000  # milliseconds
+    enable_rate_limit: true
+    weight: 100  # load balancing weight
+    options:
+      defaultType: "spot"
+      adjustForTimeDifference: true
+      recvWindow: 60000
+      timezone: "UTC"
+      verbose: false
+
+  # OKX Configuration
+  okx:
+    enabled: true
+    sandbox: false
+    api_key: "${OKX_API_KEY:}"
+    api_secret: "${OKX_API_SECRET:}"
+    passphrase: "${OKX_PASSPHRASE:}"
+    rate_limit: 600  # requests per minute
+    timeout: 10000
+    enable_rate_limit: true
+    weight: 90
+    options:
+      defaultType: "spot"
+      sandboxMode: false
+      verbose: false
+
+  # Huobi Configuration
+  huobi:
+    enabled: true
+    sandbox: false
+    api_key: "${HUOBI_API_KEY:}"
+    api_secret: "${HUOBI_API_SECRET:}"
+    passphrase: null
+    rate_limit: 400  # requests per minute
+    timeout: 10000
+    enable_rate_limit: true
+    weight: 80
+    options:
+      defaultType: "spot"
+      verbose: false
+
+  # Coinbase Configuration
+  coinbase:
+    enabled: true
+    sandbox: false
+    api_key: "${COINBASE_API_KEY:}"
+    api_secret: "${COINBASE_API_SECRET:}"
+    passphrase: null
+    rate_limit: 300  # requests per minute
+    timeout: 15000
+    enable_rate_limit: true
+    weight: 70
+    options:
+      defaultType: "spot"
+      verbose: false
+
+  # Kraken Configuration
+  kraken:
+    enabled: true
+    sandbox: false
+    api_key: "${KRAKEN_API_KEY:}"
+    api_secret: "${KRAKEN_API_SECRET:}"
+    passphrase: null
+    rate_limit: 200  # requests per minute
+    timeout: 15000
+    enable_rate_limit: true
+    weight: 60
+    options:
+      defaultType: "spot"
+      verbose: false
+
+# Exchange Manager specific configuration
+exchange_manager:
+  # Load balancing strategy
+  connection_strategy: "weighted_round_robin"  # Options: round_robin, least_latency, weighted_round_robin, failover, least_connections
+
+  # Connection pooling
+  connection_pool:
+    max_size: 50  # maximum connections per exchange
+    idle_timeout: 300  # seconds
+    max_concurrent_connections: 1000
+    health_check_interval: 30  # seconds
+
+  # Rate limiting
+  rate_limiting:
+    use_redis: true  # use Redis for distributed rate limiting
+    local_fallback: true  # fallback to local rate limiting if Redis fails
+    default_window: 60  # seconds
+    default_limit: 100  # requests per window
+    priority_multiplier:
+      high: 0.5  # high priority gets 50% more requests
+      normal: 1.0
+      low: 2.0  # low priority gets 50% fewer requests
+
+  # Health monitoring
+  health_monitoring:
+    enabled: true
+    check_interval: 30  # seconds
+    timeout: 10  # seconds for health check
+    max_consecutive_errors: 5  # before marking as degraded
+    health_score_threshold: 0.3  # below this is unhealthy
+    auto_recovery: true
+    recovery_interval: 60  # seconds between recovery attempts
+
+  # Failover configuration
+  failover:
+    enabled: true
+    detection_time: 10  # seconds to detect failure
+    failover_time: 30  # seconds to complete failover
+    max_failover_attempts: 3
+    backoff_strategy: "exponential"  # linear or exponential
+    backoff_multiplier: 2.0
+
+  # Performance optimization
+  performance:
+    connection_cache_size: 100
+    request_timeout: 10000  # milliseconds
+    retry_attempts: 3
+    retry_delay: 1000  # milliseconds
+    circuit_breaker_enabled: true
+    circuit_breaker_threshold: 0.5  # error rate
+    circuit_breaker_timeout: 60  # seconds
+
+  # Caching
+  caching:
+    enabled: true
+    ttl: 300  # seconds
+    max_size: 10000
+    cache_markets: true
+    cache_tickers: true
+    cache_orderbooks: true
+    cache_trades: false
+
+# Monitoring configuration
+monitoring:
+  prometheus_enabled: true
+  prometheus_port: 9090
+  prometheus_path: "/metrics"
+  grafana_enabled: true
+  grafana_host: "localhost"
+  grafana_port: 3000
+
+  # Metrics collection
+  metrics:
+    request_metrics: true
+    data_quality_metrics: true
+    system_metrics: true
+    exchange_metrics: true
+    collection_interval: 60  # seconds
+
+  # Alerts
+  alerts:
+    enabled: true
+    error_rate_threshold: 0.1  # 10%
+    latency_threshold: 1000  # milliseconds
+    health_score_threshold: 0.5
+    notification_channels: ["email", "webhook"]
+
+# Logging configuration
+logging:
+  level: "INFO"
+  format: "json"
+  output: ["console", "file"]
+  file_path: "logs/exchange_manager.log"
+  max_file_size: "100MB"
+  backup_count: 10
+  structured_logging: true
+
+  # Log levels for different components
+  component_levels:
+    exchange_manager: "INFO"
+    rate_limiter: "WARNING"
+    health_monitor: "INFO"
+    connection_pool: "INFO"
+
+# Data collector configuration
+collector:
+  market_data_enabled: true
+  positions_enabled: true
+  orders_enabled: true
+
+  # Symbols to collect
+  symbols: [
+    "BTC/USDT", "ETH/USDT", "BNB/USDT", "ADA/USDT", "SOL/USDT",
+    "DOT/USDT", "DOGE/USDT", "AVAX/USDT", "MATIC/USDT", "LINK/USDT"
+  ]
+
+  # Timeframes to collect
+  timeframes: ["1m", "5m", "15m", "1h", "4h", "1d"]
+
+  # Collection intervals
+  sync_interval: 5  # seconds
+  order_book_depth: 20
+  trade_limit: 1000
+
+  # Data quality
+  data_quality_threshold: 0.999
+  validation_enabled: true
+  duplicate_detection: true
+
+# Performance settings
+performance:
+  max_concurrent_connections: 1000
+  request_timeout: 100
+  cache_ttl: 300
+  thread_pool_size: 100
+  async_timeout: 30
+
+# Quality control
+quality_control:
+  data_quality_threshold: 0.999
+  max_retries: 3
+  retry_delay: 1000
+  validation_enabled: true
+  duplicate_detection: true
+  anomaly_detection: true
+
+# Security settings
+security:
+  api_key_encryption: true
+  ssl_verification: true
+  rate_limit_protection: true
+  audit_logging: true
+
+  # CORS settings for API
+  cors:
+    enabled: true
+    allowed_origins: ["*"]
+    allowed_methods: ["GET", "POST", "PUT", "DELETE"]
+    allowed_headers: ["*"]
+    max_age: 3600

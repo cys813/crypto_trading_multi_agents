@@ -120,6 +120,24 @@ class MetricsCollector:
             'utilization': (total - available) / total if total > 0 else 0
         }
 
+    def record_exchange_metrics(self, exchange_id: str, status: str, latency: float,
+                             success_rate: float, health_score: float, active_connections: int):
+        """Record exchange-specific metrics."""
+        timestamp = datetime.now()
+
+        # Update health checks
+        self.health_checks[exchange_id] = {
+            'timestamp': timestamp,
+            'status': status,
+            'latency': latency,
+            'success_rate': success_rate,
+            'health_score': health_score,
+            'active_connections': active_connections
+        }
+
+        # Record as a request metric for consistency
+        self.record_request(exchange_id, 'health_check', status == 'healthy', latency)
+
     def get_request_metrics(self, exchange: Optional[str] = None, method: Optional[str] = None,
                           time_range: Optional[timedelta] = None) -> Dict[str, Any]:
         """Get request metrics summary."""

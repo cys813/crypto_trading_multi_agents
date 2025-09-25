@@ -1,0 +1,72 @@
+# 新闻源配置文件
+# 支持YAML和JSON格式
+
+global_config:
+  version: "1.0.0"
+  default_timeout: 30
+  max_retries: 3
+  cache_enabled: true
+  cache_ttl: 300
+  log_level: "INFO"
+
+sources:
+  # CoinDesk新闻源
+  coindesk:
+    name: "coindesk"
+    adapter_type: "coindesk"
+    base_url: "https://api.coindesk.com/v1"
+    rate_limit: 60
+    timeout: 30
+    enabled: true
+    priority: 8
+    headers:
+      User-Agent: "CryptoNewsAgent/1.0"
+
+  # CoinTelegraph新闻源
+  cointelegraph:
+    name: "cointelegraph"
+    adapter_type: "cointelegraph"
+    base_url: "https://cointelegraph.com/api/v1"
+    rate_limit: 100
+    timeout: 30
+    enabled: true
+    priority: 7
+    headers:
+      User-Agent: "CryptoNewsAgent/1.0"
+
+  # Decrypt新闻源
+  decrypt:
+    name: "decrypt"
+    adapter_type: "decrypt"
+    base_url: "https://api.decrypt.co/v1"
+    rate_limit: 50
+    timeout: 30
+    enabled: true
+    priority: 6
+    headers:
+      User-Agent: "CryptoNewsAgent/1.0"
+
+  # 示例：需要API密钥的新闻源
+  crypto_panic:
+    name: "crypto_panic"
+    adapter_type: "crypto_panic"
+    base_url: "https://cryptopanic.com/api/v1"
+    api_key: "your-api-key-here"
+    rate_limit: 30
+    timeout: 30
+    enabled: false  # 默认禁用，需要API密钥
+    priority: 5
+    headers:
+      User-Agent: "CryptoNewsAgent/1.0"
+
+  # 示例：备用新闻源
+  news_btc:
+    name: "news_btc"
+    adapter_type: "news_btc"
+    base_url: "https://newsbtc.com/api"
+    rate_limit: 40
+    timeout: 30
+    enabled: false
+    priority: 4
+    headers:
+      User-Agent: "CryptoNewsAgent/1.0"

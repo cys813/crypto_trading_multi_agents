@@ -1,0 +1,498 @@
+"""
+项目依赖文件
+"""
+
+# 核心依赖
+streamlit>=1.28.0
+pandas>=2.0.0
+numpy>=1.24.0
+requests>=2.31.0
+aiohttp>=3.8.0
+asyncio>=3.4.3
+python-dotenv>=1.0.0
+
+# AI/LLM依赖
+openai>=1.3.0
+anthropic>=0.3.0
+langchain>=0.0.300
+langchain-openai>=0.0.2
+
+# 数据处理
+scikit-learn>=1.3.0
+scipy>=1.11.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.17.0
+
+# 加密货币特定
+ccxt>=4.1.0  # 统一加密货币交易所API
+web3>=6.10.0  # 以太坊交互
+solana>=0.30.0  # Solana交互
+pycoingecko>=3.1.0  # CoinGecko API
+
+# 数据库
+pymongo>=4.5.0
+redis>=5.0.0
+sqlalchemy>=2.0.0
+
+# 缓存和性能
+cachetools>=5.3.0
+tenacity>=8.2.0
+retrying>=1.3.4
+
+# 配置管理
+pydantic>=2.4.0
+pyyaml>=6.0.1
+toml>=0.10.2
+
+# 日志和监控
+loguru>=0.7.0
+prometheus-client>=0.17.0
+
+# 测试
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+
+# 开发工具
+black>=23.0.0
+flake8>=6.0.0
+mypy>=1.5.0
+isort>=5.12.0
+
+# 文档生成
+pypandoc>=1.11
+markdown>=3.5.0
+
+# 时间处理
+python-dateutil>=2.8.2
+pytz>=2023.3
+
+# 数据验证
+marshmallow>=3.20.0
+cerberus>=1.3.4
+
+# HTTP客户端
+httpx>=0.25.0
+urllib3>=2.0.0
+
+# 异步支持
+asyncio-throttle>=1.0.0
+aiofiles>=23.2.0
+
+# 加密和安全
+cryptography>=41.0.0
+python-jose>=3.3.0
+
+# 报告生成
+reportlab>=4.0.0
+jinja2>=3.1.0
+
+# 图像处理（可选）
+pillow>=10.0.0
+
+# 数据分析增强
+statsmodels>=0.14.0
+arch>=6.3.0  # 金融时间序列分析
+
+# API文档
+fastapi>=0.104.0
+uvicorn>=0.24.0
+
+# Docker支持
+docker>=6.1.0
+
+# 可视化
+altair>=5.1.0
+vl-convert-python>=1.2.0
+
+# 加密货币特定工具
+eth-account>=0.9.0
+hexbytes>=0.3.1
+
+# Web3相关
+eth-abi>=4.2.0
+eth-hash>=0.5.1
+
+# 性能监控
+memory-profiler>=0.61.0
+psutil>=5.9.0
+
+# 配置管理
+python-decouple>=3.8
+click>=8.1.0
+
+# 数据序列化
+orjson>=3.9.0
+msgpack>=1.0.5
+
+# 网络工具
+socketio>=5.9.0
+websocket-client>=1.6.0
+
+# 财务计算
+numpy-financial>=1.0.0
+TA-Lib>=0.4.28  # 技术分析库
+
+# 机器学习（可选）
+tensorflow>=2.13.0
+torch>=2.1.0
+transformers>=4.35.0
+
+# 自然语言处理
+nltk>=3.8.0
+spacy>=3.7.0
+textblob>=0.17.1
+
+# 时间序列
+pandas-ta>=0.3.14b0
+tslearn>=0.6.0
+
+# 数据库工具
+alembic>=1.12.0
+redis-om>=0.2.0
+
+# 任务队列
+celery>=5.3.0
+redis>=5.0.0
+
+# 监控和日志
+structlog>=23.1.0
+rich>=13.6.0
+
+# 安全
+bcrypt>=4.0.0
+pyjwt>=2.8.0
+
+# API测试
+postman>=1.0.0
+requests-mock>=1.11.0
+
+# 开发环境
+ipython>=8.15.0
+jupyter>=1.0.0
+notebook>=7.0.0
+
+# 代码质量
+pre-commit>=3.5.0
+bandit>=1.7.0
+safety>=2.3.0
+
+# 文档
+sphinx>=7.1.0
+sphinx-rtd-theme>=1.3.0
+
+# 部署
+gunicorn>=21.2.0
+supervisor>=4.2.5
+
+# 备份和恢复
+boto3>=1.28.0
+azure-storage-blob>=12.17.0
+
+# 邮件通知
+sendgrid>=6.10.0
+smtplib-ssl>=0.1.0
+
+# 缓存
+dogpile.cache>=1.3.0
+python-memcached>=1.62.0
+
+# 数据迁移
+alembic>=1.12.0
+django-migrations>=1.13.0
+
+# API网关
+kong>=2.8.0
+tyk>=5.2.0
+
+# 负载均衡
+nginx>=1.25.0
+haproxy>=2.8.0
+
+# 容器化
+docker-compose>=1.29.0
+kubernetes>=27.2.0
+
+# CI/CD
+github-actions>=1.0.0
+gitlab-ci>=1.0.0
+
+# 监控
+grafana>=10.2.0
+prometheus>=2.47.0
+
+# 日志聚合
+elasticsearch>=8.10.0
+logstash>=8.10.0
+kibana>=8.10.0
+
+# 告警
+alertmanager>=0.26.0
+pagerduty>=3.0.0
+
+# 备份
+restic>=0.16.0
+duplicity>=1.2.0
+
+# 性能测试
+locust>=2.17.0
+jmeter>=5.6.0
+
+# 安全扫描
+owasp-zap>=2.13.0
+clair>=4.5.0
+
+# 依赖管理
+pip-tools>=7.3.0
+pipdeptree>=2.13.0
+
+# 包管理
+poetry>=1.6.0
+pipenv>=2023.10.0
+
+# 虚拟环境
+virtualenv>=20.24.0
+conda>=23.9.0
+
+# 代码生成
+jinja2>=3.1.0
+mako>=1.2.4
+
+# 文档生成
+mkdocs>=1.5.0
+mkdocs-material>=9.4.0
+
+# 测试覆盖率
+coverage>=7.3.0
+pytest-cov>=4.1.0
+
+# 性能分析
+cProfile>=3.0.0
+line_profiler>=4.1.0
+
+# 内存分析
+tracemalloc>=3.0.0
+objgraph>=3.6.0
+
+# 线程分析
+threading>=3.0.0
+concurrent-futures>=3.1.0
+
+# 网络分析
+netstat>=0.7.0
+ss>=2.0.0
+
+# 系统监控
+psutil>=5.9.0
+GPUtil>=1.4.0
+
+# 文件监控
+watchdog>=3.0.0
+inotify>=0.2.10
+
+# 配置管理
+configparser>=5.3.0
+configobj>=5.0.8
+
+# 数据验证
+jsonschema>=4.19.0
+fastjsonschema>=2.19.0
+
+# 数据转换
+pydantic>=2.4.0
+marshmallow>=3.20.0
+
+# 数据序列化
+pickle>=5.0.0
+shelve>=1.0.0
+
+# 数据压缩
+zlib>=1.0.0
+gzip>=0.1.0
+
+# 数据加密
+cryptography>=41.0.0
+pycrypto>=2.6.1
+
+# 数据签名
+ecdsa>=0.18.0
+ed25519>=1.5.0
+
+# 数据哈希
+hashlib>=20081119
+sha3>=1.0.0
+
+# 数据编码
+base64>=1.0.0
+hex>=0.1.0
+
+# 数据解析
+lxml>=4.9.0
+beautifulsoup4>=4.12.0
+
+# 数据提取
+scrapy>=2.11.0
+selenium>=4.15.0
+
+# 数据清洗
+pandas>=2.0.0
+numpy>=1.24.0
+
+# 数据分析
+scipy>=1.11.0
+statsmodels>=0.14.0
+
+# 数据可视化
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.17.0
+
+# 数据报告
+jupyter>=1.0.0
+notebook>=7.0.0
+
+# 数据导出
+openpyxl>=3.1.0
+xlsxwriter>=3.1.0
+
+# 数据导入
+csv>=1.0.0
+json>=2.0.9
+
+# 数据存储
+sqlite3>=2.6.0
+mysql-connector-python>=8.1.0
+psycopg2-binary>=2.9.7
+
+# 数据同步
+rsync>=3.2.7
+unison>=2.53.2
+
+# 数据备份
+tar>=0.1.0
+zip>=0.1.0
+
+# 数据恢复
+testdisk>=7.1
+photorec>=7.1
+
+# 数据加密
+veracrypt>=1.25.9
+bitlocker>=2.0.0
+
+# 数据压缩
+7z>=23.0.0
+rar>=6.0.0
+
+# 数据分割
+split>=1.0.0
+csplit>=1.0.0
+
+# 数据合并
+cat>=1.0.0
+join>=1.0.0
+
+# 数据排序
+sort>=1.0.0
+uniq>=1.0.0
+
+# 数据搜索
+grep>=3.0.0
+find>=4.9.0
+
+# 数据替换
+sed>=4.9.0
+awk>=5.2.0
+
+# 数据过滤
+cut>=1.0.0
+tr>=1.0.0
+
+# 数据统计
+wc>=1.0.0
+du>=1.0.0
+
+# 数据监控
+tail>=1.0.0
+head>=1.0.0
+
+# 数据日志
+logger>=1.0.0
+syslog>=1.0.0
+
+# 数据报警
+notify-send>=0.8.0
+zenity>=3.92.0
+
+# 数据通知
+mail>=1.0.0
+sendmail>=8.17.0
+
+# 数据同步
+sync>=1.0.0
+fsync>=1.0.0
+
+# 数据清理
+clean>=1.0.0
+purge>=1.0.0
+
+# 数据优化
+optimize>=1.0.0
+tune>=1.0.0
+
+# 数据修复
+repair>=1.0.0
+fix>=1.0.0
+
+# 数据恢复
+recover>=1.0.0
+restore>=1.0.0
+
+# 数据迁移
+migrate>=1.0.0
+convert>=1.0.0
+
+# 数据转换
+transform>=1.0.0
+translate>=1.0.0
+
+# 数据标准化
+normalize>=1.0.0
+standardize>=1.0.0
+
+# 数据验证
+validate>=1.0.0
+verify>=1.0.0
+
+# 数据质量
+quality>=1.0.0
+integrity>=1.0.0
+
+# 数据治理
+governance>=1.0.0
+compliance>=1.0.0
+
+# 数据安全
+security>=1.0.0
+privacy>=1.0.0
+
+# 数据合规
+compliance>=1.0.0
+regulation>=1.0.0
+
+# 数据审计
+audit>=1.0.0
+review>=1.0.0
+
+# 数据报告
+report>=1.0.0
+summary>=1.0.0
+
+# 数据洞察
+insight>=1.0.0
+analytics>=1.0.0
+
+# 数据智能
+intelligence>=1.0.0
+wisdom>=1.0.0

@@ -1,0 +1,28 @@
+{
+  "individual_sources": {
+    "Twitter": {
+      "success": true,
+      "response_time": 0.0009164810180664062
+    },
+    "Reddit": {
+      "success": true,
+      "response_time": 0.000484466552734375
+    },
+    "新闻": {
+      "success": true,
+      "response_time": 0.0009486675262451172
+    },
+    "Telegram": {
+      "success": true,
+      "response_time": 0.0006656646728515625
+    },
+    "YouTube": {
+      "success": true,
+      "response_time": 0.0004169940948486328
+    }
+  },
+  "integration": false,
+  "cache": true,
+  "monitoring": true,
+  "cleanup": true
+}

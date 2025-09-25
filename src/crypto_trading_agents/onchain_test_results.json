@@ -1,0 +1,179 @@
+{
+  "traditional_analysis": {
+    "onchain_health": {
+      "overall_score": 0.9159891598915989,
+      "status": "excellent",
+      "key_metrics": {
+        "network_activity": "normal",
+        "transaction_volume": "high",
+        "network_stability": "healthy"
+      }
+    },
+    "market_sentiment": {
+      "sentiment_score": 0.39999999999999997,
+      "sentiment": "bullish",
+      "confidence": 0.4799999999999999,
+      "key_drivers": [
+        "交易所压力: buying",
+        "巨鲸情绪: bullish",
+        "DeFi采用: low"
+      ]
+    },
+    "risk_metrics": {
+      "overall_score": 0.2,
+      "risk_level": "low",
+      "key_risks": [
+        "流动性下降"
+      ],
+      "risk_categories": {
+        "concentration_risk": "moderate",
+        "network_risk": "healthy",
+        "liquidity_risk": "decreasing"
+      }
+    },
+    "key_insights": [
+      "网络活跃度: normal",
+      "经济活动水平: high",
+      "交易所压力: buying",
+      "巨鲸行为: accumulating"
+    ],
+    "address_analysis": {
+      "activity_level": "normal",
+      "growth_trend": "increasing",
+      "network_adoption": "strong",
+      "score": 1.1219512195121952
+    },
+    "transaction_analysis": {
+      "network_utilization": "high",
+      "fee_pressure": "normal",
+      "usage_growth": "strong",
+      "economic_activity": "high"
+    },
+    "flow_analysis": {
+      "exchange_pressure": "buying",
+      "accumulation_phase": true,
+      "distribution_phase": false,
+      "liquidity_trend": "decreasing"
+    },
+    "whale_analysis": {
+      "whale_sentiment": "bullish",
+      "concentration_risk": "moderate",
+      "whale_behavior": "accumulating",
+      "market_manipulation_risk": "low"
+    },
+    "network_analysis": {
+      "network_status": "healthy",
+      "decentralization": "high",
+      "security_level": "high",
+      "scalability": "good"
+    },
+    "defi_analysis": {
+      "defi_adoption": "low",
+      "user_engagement": "low",
+      "ecosystem_growth": "developing",
+      "innovation_level": "medium"
+    },
+    "holder_analysis": {
+      "distribution_fairness": "fair",
+      "retail_participation": "low",
+      "decentralization_level": "high",
+      "community_strength": "weak"
+    },
+    "confidence": 0.6979945799457994,
+    "data_quality": {
+      "completeness": 1.0,
+      "quality_score": 1.0,
+      "data_age": "recent",
+      "reliability": "high"
+    }
+  },
+  "ai_enhanced_analysis": {
+    "onchain_health": {
+      "overall_score": 0.9159891598915989,
+      "status": "excellent",
+      "key_metrics": {
+        "network_activity": "normal",
+        "transaction_volume": "high",
+        "network_stability": "healthy"
+      }
+    },
+    "market_sentiment": {
+      "sentiment_score": 0.39999999999999997,
+      "sentiment": "bullish",
+      "confidence": 0.4799999999999999,
+      "key_drivers": [
+        "交易所压力: buying",
+        "巨鲸情绪: bullish",
+        "DeFi采用: low"
+      ]
+    },
+    "risk_metrics": {
+      "overall_score": 0.2,
+      "risk_level": "low",
+      "key_risks": [
+        "流动性下降"
+      ],
+      "risk_categories": {
+        "concentration_risk": "moderate",
+        "network_risk": "healthy",
+        "liquidity_risk": "decreasing"
+      }
+    },
+    "key_insights": [
+      "网络活跃度: normal",
+      "经济活动水平: high",
+      "交易所压力: buying",
+      "巨鲸行为: accumulating"
+    ],
+    "address_analysis": {
+      "activity_level": "normal",
+      "growth_trend": "increasing",
+      "network_adoption": "strong",
+      "score": 1.1219512195121952
+    },
+    "transaction_analysis": {
+      "network_utilization": "high",
+      "fee_pressure": "normal",
+      "usage_growth": "strong",
+      "economic_activity": "high"
+    },
+    "flow_analysis": {
+      "exchange_pressure": "buying",
+      "accumulation_phase": true,
+      "distribution_phase": false,
+      "liquidity_trend": "decreasing"
+    },
+    "whale_analysis": {
+      "whale_sentiment": "bullish",
+      "concentration_risk": "moderate",
+      "whale_behavior": "accumulating",
+      "market_manipulation_risk": "low"
+    },
+    "network_analysis": {
+      "network_status": "healthy",
+      "decentralization": "high",
+      "security_level": "high",
+      "scalability": "good"
+    },
+    "defi_analysis": {
+      "defi_adoption": "low",
+      "user_engagement": "low",
+      "ecosystem_growth": "developing",
+      "innovation_level": "medium"
+    },
+    "holder_analysis": {
+      "distribution_fairness": "fair",
+      "retail_participation": "low",
+      "decentralization_level": "high",
+      "community_strength": "weak"
+    },
+    "confidence": 0.6979945799457994,
+    "data_quality": {
+      "completeness": 1.0,
+      "quality_score": 1.0,
+      "data_age": "recent",
+      "reliability": "high"
+    }
+  },
+  "test_timestamp": "2024-01-15T10:30:00"
+}

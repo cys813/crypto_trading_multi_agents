@@ -1,0 +1,19 @@
+{
+  "system": {
+    "name": "Crypto Trading Agents",
+    "version": "1.0.0",
+    "debug": true
+  },
+  "data_sources": {
+    "use_real_data": false,
+    "simulation_mode": true
+  },
+  "ai": {
+    "enabled": false,
+    "provider": "mock"
+  },
+  "trading": {
+    "default_symbol": "BTC/USDT",
+    "default_timeframe": "1h"
+  }
+}

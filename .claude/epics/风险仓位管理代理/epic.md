@@ -1,9 +1,10 @@
 ---
 name: 风险仓位管理代理
 description: 根据当前仓位和总体交易策略生成最终交易指令的风险管理模块
-status: draft
+status: active
 created: 2025-09-25T19:15:00Z
-updated: 2025-09-25T19:15:00Z
+updated: 2025-09-25T19:50:00Z
+github: https://github.com/cys813/crypto_trading_multi_agents/issues/62
 ---
 
 # Epic: 风险仓位管理代理

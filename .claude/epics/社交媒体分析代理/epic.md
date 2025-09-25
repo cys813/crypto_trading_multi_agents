@@ -1,9 +1,10 @@
 ---
 name: 社交媒体分析代理
 description: 负责收集和分析TradingView等平台的加密货币分析策略和观点的社交媒体数据分析代理
-status: draft
+status: active
 created: 2025-09-25T18:47:00Z
-updated: 2025-09-25T18:47:00Z
+updated: 2025-09-25T19:50:00Z
+github: https://github.com/cys813/crypto_trading_multi_agents/issues/63
 ---
 
 # Epic: 社交媒体分析代理

@@ -1,9 +1,10 @@
 ---
 name: 加密货币多agent交易系统
 description: 一个集成8个专门代理的多代理加密货币交易系统，提供完整的系统架构、代理协作机制和集成框架
-status: draft
+status: active
 created: 2025-09-25T19:20:00Z
-updated: 2025-09-25T19:20:00Z
+updated: 2025-09-25T19:50:00Z
+github: https://github.com/cys813/crypto_trading_multi_agents/issues/64
 ---
 
 # Epic: 加密货币多agent交易系统

@@ -6,12 +6,43 @@ pyyaml>=6.0
 watchdog>=2.1.0
 psutil>=5.8.0
 
+# LLM集成依赖
+# OpenAI (可选)
+openai>=1.0.0
+
+# Anthropic (可选)
+anthropic>=0.3.0
+
+# 缓存和数据处理
+redis>=4.5.0  # 可选，用于高级缓存
+pymongo>=4.0.0  # 可选，用于MongoDB缓存
+
+# 文本处理
+nltk>=3.8.0
+spacy>=3.6.0
+
+# 数据分析
+pandas>=2.0.0
+numpy>=1.24.0
+
+# 配置管理
+python-dotenv>=1.0.0
+
+# 日志和监控
+structlog>=23.0.0
+
 # 测试依赖
 pytest>=7.0.0
 pytest-asyncio>=0.20.0
 pytest-cov>=4.0.0
+pytest-mock>=3.10.0
 
 # 开发依赖
 black>=22.0.0
 flake8>=5.0.0
 mypy>=0.991
+isort>=5.12.0
+
+# 文档
+sphinx>=5.0.0
+sphinx-rtd-theme>=1.2.0

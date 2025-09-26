@@ -1,0 +1,123 @@
+# 新闻内容处理管道配置
+
+# 基础配置
+enable_preprocessing: true
+enable_deduplication: true
+enable_noise_filtering: true
+enable_structuring: true
+enable_quality_scoring: true
+
+# 预处理配置
+preprocessing:
+  min_content_length: 100      # 最小内容长度（字符）
+  max_content_length: 10000   # 最大内容长度（字符）
+  normalize_whitespace: true   # 标准化空白字符
+  remove_html_tags: true       # 移除HTML标签
+  remove_urls: true           # 移除URL
+  remove_special_chars: true   # 移除特殊字符
+  min_word_count: 50          # 最小词数
+  max_repetition_ratio: 0.3   # 最大重复比例
+
+# 去重配置
+deduplication:
+  similarity_threshold: 0.85  # 相似度阈值
+  semantic_threshold: 0.75    # 语义相似度阈值
+  cross_source_detection: true # 跨源检测
+  time_window_hours: 24      # 时间窗口（小时）
+  cache_ttl_hours: 24         # 缓存TTL（小时）
+  enable_semantic_analysis: true # 启用语义分析
+  max_fingerprint_cache: 10000 # 最大指纹缓存数量
+
+# 噪声过滤配置
+noise_filtering:
+  remove_ads: true            # 移除广告
+  remove_boilerplate: true    # 移除样板文本
+  remove_spam: true          # 移除垃圾内容
+  min_word_count: 50         # 最小词数
+  max_repetition_ratio: 0.3  # 最大重复比例
+  noise_score_threshold: 0.7 # 噪声分数阈值
+  enable_ad_detection: true  # 启用广告检测
+  enable_spam_detection: true # 启用垃圾检测
+
+# 结构化配置
+structuring:
+  enable_section_extraction: true  # 启用章节提取
+  enable_key_point_extraction: true # 启用关键点提取
+  enable_entity_recognition: true  # 启用实体识别
+  enable_sentiment_analysis: true  # 启用情感分析
+  max_sections: 10            # 最大章节数
+  max_key_points: 10         # 最大关键点数
+  enable_urgency_detection: true # 启用紧急程度检测
+  reading_time_calculation: true # 计算阅读时间
+
+# 质量评分配置
+quality_scoring:
+  quality_threshold: 0.6      # 质量阈值
+  enable_confidence_scoring: true # 启用置信度评分
+  grade_thresholds:
+    A_plus: 0.95
+    A: 0.85
+    B: 0.70
+    C: 0.55
+    D: 0.40
+    F: 0.0
+
+  # 可读性权重
+  readability_weights:
+    content_length: 0.3
+    sentence_structure: 0.2
+    vocabulary: 0.2
+    coherence: 0.3
+
+  # 信誉权重
+  credibility_weights:
+    source_reputation: 0.4
+    author_credibility: 0.3
+    fact_checking: 0.3
+
+  # 质量因子权重
+  factor_weights:
+    content_length: 0.15
+    readability: 0.15
+    source_credibility: 0.20
+    timeliness: 0.10
+    completeness: 0.10
+    structure: 0.10
+    relevance: 0.10
+    originality: 0.05
+    engagement: 0.05
+
+# 性能配置
+performance:
+  max_batch_size: 100        # 最大批处理大小
+  processing_timeout: 30.0   # 处理超时（秒）
+  enable_parallel_processing: true # 启用并行处理
+  max_workers: 4             # 最大工作线程数
+  memory_limit_mb: 500       # 内存限制（MB）
+  enable_caching: true       # 启用缓存
+  cache_size: 1000          # 缓存大小
+
+# 日志配置
+logging:
+  level: INFO               # 日志级别
+  enable_performance_logging: true # 启用性能日志
+  enable_error_tracking: true # 启用错误跟踪
+  log_file: processing.log   # 日志文件
+
+# 监控配置
+monitoring:
+  enable_metrics: true       # 启用指标收集
+  metrics_interval: 60      # 指标收集间隔（秒）
+  enable_health_check: true # 启用健康检查
+  health_check_interval: 30 # 健康检查间隔（秒）
+
+# 高级配置
+advanced:
+  enable_machine_learning: false # 启用机器学习
+  ml_model_path: null       # 机器学习模型路径
+  enable_nlp_processing: false # 启用NLP处理
+  nlp_model_type: basic    # NLP模型类型
+  enable_external_apis: false # 启用外部API
+  api_timeout: 10          # API超时（秒）
+  enable_custom_rules: true # 启用自定义规则
+  custom_rules_path: rules/custom_rules.json # 自定义规则路径

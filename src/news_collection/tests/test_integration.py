@@ -1,369 +1,389 @@
 """
-集成测试 - 测试完整的新闻收集流程
+Integration tests for the entire processing pipeline
 """
 
-import pytest
+import unittest
 import asyncio
-import tempfile
-import os
-from datetime import datetime, timedelta
+from datetime import datetime
+from unittest.mock import patch, MagicMock
 
-from news_collection.news_agent import NewsCollectionAgent
-from news_collection.models.base import (
-    NewsSourceConfig,
-    NewsQuery,
-    NewsArticle,
-    NewsCategory,
-    ConnectionPoolConfig,
-    HealthCheckConfig,
-    RetryPolicy
-)
+from ..processing.pipeline_manager import PipelineManager
+from ..processing.models import ProcessingConfig
+from ..models.base import NewsArticle, NewsCategory
 
 
-class TestNewsCollectionIntegration:
-    """新闻收集集成测试"""
+class TestProcessingPipelineIntegration(unittest.TestCase):
+    """测试处理管道集成"""
 
-    @pytest.fixture
-    def temp_config_file(self):
-        """临时配置文件"""
-        config_content = """
-global_config:
-  version: "1.0.0"
-  default_timeout: 30
-  max_retries: 3
-  cache_enabled: true
-  cache_ttl: 300
-  log_level: "INFO"
+    def setUp(self):
+        """测试设置"""
+        self.config = ProcessingConfig()
+        self.pipeline = PipelineManager(self.config)
 
-sources:
-  test_source_1:
-    name: "test_source_1"
-    adapter_type: "mock"
-    base_url: "https://api.test1.com"
-    rate_limit: 60
-    timeout: 30
-    enabled: true
-    priority: 8
+        # 创建测试文章数据
+        self.test_articles = [
+            # 高质量文章
+            NewsArticle(
+                id="high_quality_001",
+                title="Bitcoin Reaches All-Time High Amid Institutional Adoption",
+                content="""
+                Bitcoin, the world's largest cryptocurrency, has reached a new all-time high of $65,000
+                as institutional investors continue to adopt digital assets. Major companies including
+                Tesla and MicroStrategy have added Bitcoin to their balance sheets, while traditional
+                financial institutions are launching cryptocurrency investment products.
 
-  test_source_2:
-    name: "test_source_2"
-    adapter_type: "mock"
-    base_url: "https://api.test2.com"
-    rate_limit: 100
-    timeout: 30
-    enabled: true
-    priority: 7
-
-  disabled_source:
-    name: "disabled_source"
-    adapter_type: "mock"
-    base_url: "https://api.disabled.com"
-    rate_limit: 50
-    timeout: 30
-    enabled: false
-    priority: 1
-"""
-
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
-            f.write(config_content)
-            f.flush()
-            yield f.name
-
-        os.unlink(f.name)
-
-    @pytest.fixture
-    def agent_config(self):
-        """代理配置"""
-        return {
-            'connection_pool_config': ConnectionPoolConfig(
-                max_connections_per_source=3,
-                connection_timeout=15,
-                health_check_interval=10
+                The surge comes as regulatory clarity improves and mainstream acceptance grows.
+                Analysts predict further growth as more institutions enter the market.
+                """,
+                summary="Bitcoin reaches new all-time high driven by institutional adoption.",
+                author="John Smith",
+                published_at=datetime.now(),
+                source="coindesk.com",
+                url="https://coindesk.com/bitcoin-ath",
+                category=NewsCategory.GENERAL,
+                tags=["bitcoin", "institutional", "adoption"]
             ),
-            'health_check_config': HealthCheckConfig(
-                check_interval=15,
-                timeout=5,
-                max_failures=2
+            # 包含噪声的文章
+            NewsArticle(
+                id="noisy_001",
+                title="Crypto News Update <script>alert('ads')</script>",
+                content="""
+                <p>Cryptocurrency markets show mixed signals today.</p>
+                <div class="ad">Click here for special offers!!!</div>
+                Bitcoin trading volume increased while Ethereum remained stable.
+                免责声明：投资有风险，入市需谨慎。本文仅供参考，不构成投资建议。
+                Visit https://scam-site.com for more info!!! AAAABBBBCCCC repeated characters.
+                """,
+                published_at=datetime.now(),
+                source="unknown-source.com",
+                category=NewsCategory.GENERAL
             ),
-            'retry_policy': RetryPolicy(
-                max_attempts=2,
-                base_delay=0.5,
-                max_delay=5.0
+            # 重复文章
+            NewsArticle(
+                id="duplicate_001",
+                title="Bitcoin Reaches All-Time High Amid Institutional Adoption",
+                content="""
+                Bitcoin, the world's largest cryptocurrency, has reached a new all-time high of $65,000
+                as institutional investors continue to adopt digital assets. Major companies including
+                Tesla and MicroStrategy have added Bitcoin to their balance sheets, while traditional
+                financial institutions are launching cryptocurrency investment products.
+                """,
+                published_at=datetime.now(),
+                source="bloomberg.com",
+                category=NewsCategory.GENERAL
+            ),
+            # 低质量文章
+            NewsArticle(
+                id="low_quality_001",
+                title="Short",
+                content="Too short content",
+                published_at=datetime.now(),
+                source="low-quality-source.com",
+                category=NewsCategory.GENERAL
             )
-        }
+        ]
 
-    @pytest.mark.asyncio
-    async def test_full_lifecycle(self, temp_config_file, agent_config):
-        """测试完整的生命周期"""
-        agent = NewsCollectionAgent(
-            config_path=temp_config_file,
-            **agent_config
-        )
+    def test_full_pipeline_integration(self):
+        """测试完整管道集成"""
+        # 启用所有处理阶段
+        self.config.enable_preprocessing = True
+        self.config.enable_deduplication = True
+        self.config.enable_noise_filtering = True
+        self.config.enable_structuring = True
+        self.config.enable_quality_scoring = True
 
-        try:
-            # 1. 初始化
-            success = await agent.initialize()
-            assert success, "代理初始化失败"
+        # 启用并行处理
+        self.config.enable_parallel_processing = True
+        self.config.max_batch_size = 10
 
-            # 2. 验证配置加载
-            available_sources = await agent.get_available_sources()
-            assert len(available_sources) == 2, "应该有2个可用新闻源"
-            source_names = [s.name for s in available_sources]
-            assert "test_source_1" in source_names
-            assert "test_source_2" in source_names
-            assert "disabled_source" not in source_names
+        result = asyncio.run(self.pipeline.process_articles(self.test_articles))
 
-            # 3. 验证健康状态
-            health_status = await agent.get_health_status()
-            assert "health_status" in health_status
-            assert "monitoring_summary" in health_status
-            assert "available_sources" in health_status
+        # 验证基本结果
+        self.assertIsInstance(result, PipelineManager)
+        self.assertEqual(len(result.articles), len(self.test_articles))
+        self.assertEqual(len(result.processing_results), len(self.test_articles))
 
-            # 4. 验证统计信息
-            stats = await agent.get_statistics()
-            assert "runtime_stats" in stats
-            assert stats["runtime_stats"]["is_running"] == True
-            assert stats["runtime_stats"]["total_requests"] == 0
+        # 验证统计信息
+        stats = result.stats
+        self.assertGreater(stats.total_articles, 0)
+        self.assertGreater(stats.total_processing_time, 0)
+        self.assertGreaterEqual(stats.successful_articles, 0)
 
-            # 5. 模拟新闻收集（这里需要mock适配器行为）
-            # 注意：实际测试中需要mock适配器或使用真实适配器
+        # 验证处理结果
+        for processing_result in result.processing_results:
+            self.assertIn(processing_result.status.value, ['completed', 'failed', 'skipped'])
+            self.assertIsInstance(processing_result.processing_time, float)
+            self.assertGreater(processing_result.processing_time, 0)
 
-            # 6. 关闭
-            await agent.shutdown()
+            # 检查元数据
+            self.assertIsInstance(processing_result.metadata, dict)
 
-            # 7. 验证关闭状态
-            stats = await agent.get_statistics()
-            assert stats["runtime_stats"]["is_running"] == False
+            # 检查错误列表
+            self.assertIsInstance(processing_result.errors, list)
 
-        finally:
-            if agent._running:
-                await agent.shutdown()
+    def test_preprocessing_integration(self):
+        """测试预处理集成"""
+        # 只启用预处理
+        self.config.enable_preprocessing = True
+        self.config.enable_deduplication = False
+        self.config.enable_noise_filtering = False
+        self.config.enable_structuring = False
+        self.config.enable_quality_scoring = False
 
-    @pytest.mark.asyncio
-    async def test_dynamic_source_management(self, temp_config_file, agent_config):
-        """测试动态新闻源管理"""
-        agent = NewsCollectionAgent(
-            config_path=temp_config_file,
-            **agent_config
-        )
+        result = asyncio.run(self.pipeline.process_articles([self.test_articles[1]]))  # 噪声文章
 
-        try:
-            await agent.initialize()
+        processing_result = result.processing_results[0]
 
-            # 添加新新闻源
-            new_config = NewsSourceConfig(
-                name="dynamic_source",
-                adapter_type="mock",
-                base_url="https://api.dynamic.com",
-                rate_limit=75,
-                timeout=25,
-                enabled=True,
-                priority=9
+        # 验证预处理被执行
+        self.assertIn('preprocessing', [stage.value for stage in processing_result.stages_completed])
+
+        # 验证预处理统计
+        self.assertIn('preprocessing_stats', processing_result.metadata)
+        preprocessing_stats = processing_result.metadata['preprocessing_stats']
+        self.assertIn('original_length', preprocessing_stats)
+        self.assertIn('processed_length', preprocessing_stats)
+
+    def test_deduplication_integration(self):
+        """测试去重集成"""
+        # 只启用去重
+        self.config.enable_preprocessing = False
+        self.config.enable_deduplication = True
+        self.config.enable_noise_filtering = False
+        self.config.enable_structuring = False
+        self.config.enable_quality_scoring = False
+
+        # 处理包含重复的文章
+        result = asyncio.run(self.pipeline.process_articles([
+            self.test_articles[0],  # 原始文章
+            self.test_articles[2]   # 重复文章
+        ]))
+
+        # 检查是否检测到重复
+        duplicate_result = None
+        for processing_result in result.processing_results:
+            if processing_result.is_duplicate:
+                duplicate_result = processing_result
+                break
+
+        self.assertIsNotNone(duplicate_result, "应该检测到重复文章")
+        self.assertTrue(duplicate_result.is_duplicate)
+        self.assertEqual(duplicate_result.status.value, 'skipped')
+
+    def test_noise_filtering_integration(self):
+        """测试噪声过滤集成"""
+        # 只启用噪声过滤
+        self.config.enable_preprocessing = False
+        self.config.enable_deduplication = False
+        self.config.enable_noise_filtering = True
+        self.config.enable_structuring = False
+        self.config.enable_quality_scoring = False
+
+        result = asyncio.run(self.pipeline.process_articles([self.test_articles[1]]))  # 噪声文章
+
+        processing_result = result.processing_results[0]
+
+        # 验证噪声过滤被执行
+        self.assertIn('noise_filtering', [stage.value for stage in processing_result.stages_completed])
+
+        # 验证噪声过滤统计
+        self.assertIn('noise_filtering_stats', processing_result.metadata)
+        noise_stats = processing_result.metadata['noise_filtering_stats']
+        self.assertIn('original_length', noise_stats)
+        self.assertIn('filtered_length', noise_stats)
+        self.assertIn('removed_ads', noise_stats)
+
+    def test_quality_scoring_integration(self):
+        """测试质量评分集成"""
+        # 只启用质量评分
+        self.config.enable_preprocessing = False
+        self.config.enable_deduplication = False
+        self.config.enable_noise_filtering = False
+        self.config.enable_structuring = False
+        self.config.enable_quality_scoring = True
+
+        result = asyncio.run(self.pipeline.process_articles([self.test_articles[0]]))  # 高质量文章
+
+        processing_result = result.processing_results[0]
+
+        # 验证质量评分被执行
+        self.assertIn('quality_scoring', [stage.value for stage in processing_result.stages_completed])
+
+        # 验证质量分数
+        self.assertIsNotNone(processing_result.quality_score)
+        self.assertIsInstance(processing_result.quality_score, float)
+        self.assertGreaterEqual(processing_result.quality_score, 0.0)
+        self.assertLessEqual(processing_result.quality_score, 1.0)
+
+        # 验证质量评分元数据
+        self.assertIn('quality_score', processing_result.metadata)
+        quality_metadata = processing_result.metadata['quality_score']
+        self.assertIn('overall_score', quality_metadata)
+        self.assertIn('grade', quality_metadata)
+        self.assertIn('confidence', quality_metadata)
+        self.assertIn('recommendation', quality_metadata)
+
+    def test_content_structuring_integration(self):
+        """测试内容结构化集成"""
+        # 只启用内容结构化
+        self.config.enable_preprocessing = False
+        self.config.enable_deduplication = False
+        self.config.enable_noise_filtering = False
+        self.config.enable_structuring = True
+        self.config.enable_quality_scoring = False
+
+        result = asyncio.run(self.pipeline.process_articles([self.test_articles[0]]))
+
+        processing_result = result.processing_results[0]
+
+        # 验证结构化被执行
+        self.assertIn('structuring', [stage.value for stage in processing_result.stages_completed])
+
+        # 验证结构化统计
+        self.assertIn('structuring_stats', processing_result.metadata)
+        structuring_stats = processing_result.metadata['structuring_stats']
+        self.assertIn('sections_extracted', structuring_stats)
+        self.assertIn('key_points_extracted', structuring_stats)
+        self.assertIn('entities_extracted', structuring_stats)
+
+    def test_performance_benchmark(self):
+        """测试性能基准"""
+        # 创建大量测试文章
+        large_article_set = []
+        for i in range(100):
+            article = NewsArticle(
+                id=f"benchmark_{i:03d}",
+                title=f"Test Article {i}",
+                content=f"This is test article {i} with sufficient content for processing. "
+                       f"Bitcoin price analysis and market trends discussion. "
+                       f"Institutional adoption and regulatory developments.",
+                published_at=datetime.now(),
+                source="test.com",
+                category=NewsCategory.GENERAL
             )
+            large_article_set.append(article)
 
-            success = await agent.add_news_source(new_config)
-            assert success, "添加新闻源失败"
+        # 运行性能测试
+        start_time = datetime.now()
+        result = asyncio.run(self.pipeline.process_articles(large_article_set))
+        end_time = datetime.now()
 
-            # 验证新源已添加
-            available_sources = await agent.get_available_sources()
-            source_names = [s.name for s in available_sources]
-            assert "dynamic_source" in source_names
+        # 验证性能
+        processing_time = (end_time - start_time).total_seconds()
+        self.assertLess(processing_time, 60.0)  # 应该在60秒内完成
 
-            # 移除新闻源
-            success = await agent.remove_news_source("dynamic_source")
-            assert success, "移除新闻源失败"
+        # 验证吞吐量
+        throughput = len(large_article_set) / processing_time
+        self.assertGreater(throughput, 1.0)  # 每秒至少处理1篇文章
 
-            # 验证源已移除
-            available_sources = await agent.get_available_sources()
-            source_names = [s.name for s in available_sources]
-            assert "dynamic_source" not in source_names
+        # 验证成功率
+        success_rate = result.stats.successful_articles / len(large_article_set)
+        self.assertGreater(success_rate, 0.8)  # 成功率应该超过80%
 
-        finally:
-            await agent.shutdown()
+    def test_error_recovery(self):
+        """测试错误恢复"""
+        # 创建一些会导致错误的文章
+        problematic_articles = [
+            NewsArticle(
+                id="error_001",
+                title="",  # 空标题
+                content="",  # 空内容
+                published_at=None,
+                source="",
+                category=NewsCategory.GENERAL
+            ),
+            self.test_articles[0],  # 正常文章
+            NewsArticle(
+                id="error_002",
+                title="Valid Title",
+                content="x" * 50000,  # 超大内容
+                published_at=datetime.now(),
+                source="test.com",
+                category=NewsCategory.GENERAL
+            )
+        ]
 
-    @pytest.mark.asyncio
-    async def test_error_handling(self, temp_config_file, agent_config):
-        """测试错误处理"""
-        agent = NewsCollectionAgent(
-            config_path=temp_config_file,
-            **agent_config
-        )
+        # 应该能处理错误而不崩溃
+        result = asyncio.run(self.pipeline.process_articles(problematic_articles))
 
-        try:
-            await agent.initialize()
+        self.assertEqual(len(result.articles), len(problematic_articles))
+        self.assertEqual(len(result.processing_results), len(problematic_articles))
 
-            # 获取初始错误历史（应该为空）
-            error_history = await agent.get_error_history()
-            assert len(error_history) == 0
+        # 检查是否有错误被记录
+        has_errors = any(len(r.errors) > 0 for r in result.processing_results)
+        self.assertTrue(has_errors)
 
-            # 这里可以测试特定的错误场景
-            # 注意：实际测试中需要模拟错误条件
+        # 检查是否有成功处理的文章
+        has_success = any(r.status.value == 'completed' for r in result.processing_results)
+        self.assertTrue(has_success)
 
-        finally:
-            await agent.shutdown()
+    def test_memory_efficiency(self):
+        """测试内存效率"""
+        # 创建大量文章来测试内存使用
+        memory_test_articles = []
+        for i in range(50):
+            article = NewsArticle(
+                id=f"memory_test_{i:03d}",
+                title=f"Memory Test Article {i}",
+                content="x" * 2000,  # 中等内容大小
+                published_at=datetime.now(),
+                source="test.com",
+                category=NewsCategory.GENERAL
+            )
+            memory_test_articles.append(article)
 
-    @pytest.mark.asyncio
-    async def test_performance_monitoring(self, temp_config_file, agent_config):
-        """测试性能监控"""
-        agent = NewsCollectionAgent(
-            config_path=temp_config_file,
-            **agent_config
-        )
+        # 处理文章
+        result = asyncio.run(self.pipeline.process_articles(memory_test_articles))
 
-        try:
-            await agent.initialize()
+        # 验证处理完成
+        self.assertEqual(len(result.articles), len(memory_test_articles))
 
-            # 获取初始统计
-            initial_stats = await agent.get_statistics()
+        # 清理缓存
+        self.pipeline.clear_processed_articles()
 
-            # 等待一段时间让监控数据收集
-            await asyncio.sleep(2)
+        # 验证缓存被清空
+        self.assertEqual(len(self.pipeline.processed_articles), 0)
 
-            # 获取更新后的统计
-            updated_stats = await agent.get_statistics()
+    def test_config_flexibility(self):
+        """测试配置灵活性"""
+        # 测试不同配置组合
+        configs = [
+            ProcessingConfig(enable_preprocessing=True, enable_deduplication=False),
+            ProcessingConfig(enable_preprocessing=False, enable_deduplication=True),
+            ProcessingConfig(enable_noise_filtering=True, enable_quality_scoring=False),
+            ProcessingConfig(enable_structuring=True, enable_preprocessing=False),
+            ProcessingConfig(enable_quality_scoring=True, enable_noise_filtering=False)
+        ]
 
-            # 验证统计信息结构
-            assert "runtime_stats" in updated_stats
-            assert "connection_stats" in updated_stats
-            assert "error_stats" in updated_stats
-            assert "config_stats" in updated_stats
+        for config in configs:
+            self.pipeline.update_config(config)
+            result = asyncio.run(self.pipeline.process_articles([self.test_articles[0]]))
 
-            # 验证运行时间增加
-            initial_runtime = initial_stats["runtime_stats"]["runtime_seconds"]
-            updated_runtime = updated_stats["runtime_stats"]["runtime_seconds"]
-            assert updated_runtime >= initial_runtime
+            # 验证处理完成
+            self.assertEqual(len(result.articles), 1)
+            self.assertEqual(len(result.processing_results), 1)
 
-        finally:
-            await agent.shutdown()
+    def test_health_monitoring(self):
+        """测试健康监控"""
+        # 处理一些文章
+        asyncio.run(self.pipeline.process_articles(self.test_articles))
 
-    @pytest.mark.asyncio
-    async def test_configuration_reload(self, temp_config_file, agent_config):
-        """测试配置重载"""
-        agent = NewsCollectionAgent(
-            config_path=temp_config_file,
-            **agent_config
-        )
+        # 检查健康状态
+        health = asyncio.run(self.pipeline.health_check())
 
-        try:
-            await agent.initialize()
+        self.assertEqual(health['status'], 'healthy')
+        self.assertIn('components', health)
+        self.assertIn('performance', health)
 
-            # 获取初始配置
-            initial_sources = await agent.get_available_sources()
-            initial_count = len(initial_sources)
+        # 检查组件状态
+        for component_status in health['components'].values():
+            self.assertEqual(component_status, 'healthy')
 
-            # 修改配置文件（这里简化处理，实际应该修改文件内容）
-            # 注意：真实测试中应该修改配置文件并验证重载
-
-            # 验证配置统计
-            config_stats = await agent.config_manager.get_config_stats()
-            assert "total_sources" in config_stats
-            assert "enabled_sources" in config_stats
-
-        finally:
-            await agent.shutdown()
-
-    @pytest.mark.asyncio
-    async def test_concurrent_operations(self, temp_config_file, agent_config):
-        """测试并发操作"""
-        agent = NewsCollectionAgent(
-            config_path=temp_config_file,
-            **agent_config
-        )
-
-        try:
-            await agent.initialize()
-
-            # 并发执行多个操作
-            tasks = [
-                agent.get_available_sources(),
-                agent.get_health_status(),
-                agent.get_statistics(),
-                agent.get_error_history()
-            ]
-
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-
-            # 验证所有操作都成功完成
-            for result in results:
-                assert not isinstance(result, Exception), f"并发操作失败: {result}"
-
-            # 验证结果类型
-            assert isinstance(results[0], list)  # available_sources
-            assert isinstance(results[1], dict)  # health_status
-            assert isinstance(results[2], dict)  # statistics
-            assert isinstance(results[3], list)  # error_history
-
-        finally:
-            await agent.shutdown()
-
-    @pytest.mark.asyncio
-    async def test_memory_usage(self, temp_config_file, agent_config):
-        """测试内存使用（简化版）"""
-        import psutil
-        import os
-
-        agent = NewsCollectionAgent(
-            config_path=temp_config_file,
-            **agent_config
-        )
-
-        try:
-            # 获取初始内存使用
-            process = psutil.Process(os.getpid())
-            initial_memory = process.memory_info().rss
-
-            await agent.initialize()
-
-            # 执行一些操作
-            await agent.get_available_sources()
-            await agent.get_health_status()
-            await agent.get_statistics()
-
-            # 获取操作后内存使用
-            final_memory = process.memory_info().rss
-            memory_increase = final_memory - initial_memory
-
-            # 内存增加应该在合理范围内（这里设置一个较大的阈值）
-            assert memory_increase < 50 * 1024 * 1024, f"内存使用增加过多: {memory_increase / 1024 / 1024:.2f}MB"
-
-        finally:
-            await agent.shutdown()
-
-    @pytest.mark.asyncio
-    async def test_stress_testing(self, temp_config_file, agent_config):
-        """压力测试（简化版）"""
-        agent = NewsCollectionAgent(
-            config_path=temp_config_file,
-            **agent_config
-        )
-
-        try:
-            await agent.initialize()
-
-            # 并发执行大量请求
-            num_requests = 50
-            tasks = []
-
-            for i in range(num_requests):
-                task = agent.get_available_sources()
-                tasks.append(task)
-
-            start_time = datetime.now()
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            end_time = datetime.now()
-
-            # 验证所有请求都成功
-            successful_requests = sum(1 for r in results if not isinstance(r, Exception))
-            assert successful_requests == num_requests, f"部分请求失败: {num_requests - successful_requests}/{num_requests}"
-
-            # 验证响应时间
-            total_time = (end_time - start_time).total_seconds()
-            avg_time_per_request = total_time / num_requests
-            assert avg_time_per_request < 1.0, f"平均响应时间过长: {avg_time_per_request:.3f}s"
-
-        finally:
-            await agent.shutdown()
+        # 检查性能指标
+        performance = health['performance']
+        self.assertIn('throughput', performance)
+        self.assertIn('success_rate', performance)
+        self.assertIn('average_processing_time', performance)
 
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+if __name__ == '__main__':
+    unittest.main()

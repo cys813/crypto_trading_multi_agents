@@ -1,0 +1,181 @@
+# 质量评分规则配置
+
+# 质量阈值配置
+thresholds:
+  overall_threshold: 0.6          # 总体质量阈值
+  grade_thresholds:
+    A_plus: 0.95                  # A+等级阈值
+    A: 0.85                      # A等级阈值
+    B: 0.70                      # B等级阈值
+    C: 0.55                      # C等级阈值
+    D: 0.40                      # D等级阈值
+    F: 0.0                       # F等级阈值
+
+# 质量因子权重
+factor_weights:
+  content_length: 0.15          # 内容长度权重
+  readability: 0.15              # 可读性权重
+  source_credibility: 0.20       # 来源信誉权重
+  timeliness: 0.10               # 时效性权重
+  completeness: 0.10             # 完整性权重
+  structure: 0.10                # 结构权重
+  relevance: 0.10                # 相关性权重
+  originality: 0.05              # 原创性权重
+  engagement: 0.05               # 参与度权重
+
+# 内容长度评分规则
+content_length:
+  ideal_min: 500                 # 理想最小长度
+  ideal_max: 3000                # 理想最大长度
+  minimum_length: 100            # 最小长度
+  penalty_factor: 0.3            # 过长惩罚因子
+
+# 可读性评分规则
+readability:
+  ideal_word_length_min: 4       # 理想词长最小值
+  ideal_word_length_max: 6       # 理想词长最大值
+  ideal_sentence_length_min: 15  # 理想句长最小值
+  ideal_sentence_length_max: 25  # 理想句长最大值
+  paragraph_bonus: 0.3           # 段落结构加分
+
+# 来源信誉评分规则
+source_credibility:
+  weights:
+    source_reputation: 0.4        # 源声誉权重
+    author_credibility: 0.3       # 作者信誉权重
+    fact_checking: 0.3           # 事实核查权重
+
+  # 默认信誉评分
+  default_scores:
+    unknown_source: 0.5          # 未知源
+    unknown_author: 0.5          # 未知作者
+
+  # 作者类型评分
+  author_types:
+    verified: 0.8                # 验证作者
+    staff_writer: 0.75           # 内部作者
+    contributor: 0.6              # 贡献者
+    guest: 0.4                   # 客座作者
+    anonymous: 0.2               # 匿名作者
+
+# 时效性评分规则
+timeliness:
+  time_windows:
+    very_fresh_hours: 1          # 非常新鲜（小时）
+    fresh_hours: 24               # 新鲜（小时）
+    recent_days: 7                # 最近（天）
+    recent_month: 30              # 最近月（天）
+    recent_quarter: 90            # 最近季度（天）
+
+  scores:
+    very_fresh: 1.0               # 非常新鲜分数
+    fresh: 0.9                    # 新鲜分数
+    recent: 0.8                   # 最近分数
+    month: 0.6                    # 月分数
+    quarter: 0.4                  # 季度分数
+    old: 0.2                      # 旧分数
+
+# 完整性评分规则
+completeness:
+  required_fields:               # 必需字段
+    title: 0.2
+    content: 0.3
+    summary: 0.2
+    author: 0.1
+    source: 0.1
+    url: 0.1
+
+  minimum_lengths:              # 最小长度
+    title: 10
+    content: 200
+    summary: 20
+
+# 结构评分规则
+structure:
+  paragraph_structure_bonus: 0.3 # 段落结构加分
+  header_structure_bonus: 0.3   # 标题结构加分
+  list_structure_bonus: 0.2     # 列表结构加分
+  link_structure_bonus: 0.2     # 链接结构加分
+
+# 相关性评分规则
+relevance:
+  crypto_keywords:              # 加密货币关键词
+    - bitcoin
+    - ethereum
+    - cryptocurrency
+    - blockchain
+    - defi
+    - nft
+    - trading
+    - investment
+    - market
+    - price
+    - analysis
+    - forecast
+    - regulation
+    - adoption
+    - technology
+    - innovation
+    - mining
+    - wallet
+    - exchange
+    - token
+    - coin
+    - digital
+    - virtual
+
+  keyword_match_weight: 0.7     # 关键词匹配权重
+  category_relevance_bonus: 0.3 # 分类相关性加分
+
+# 原创性评分规则
+originality:
+  base_score: 0.5               # 基础分数
+  quotation_penalty: 0.2        # 引用惩罚
+  repost_penalty: 0.1           # 转载惩罚
+  copyright_bonus: 0.1          # 版权加分
+
+# 参与度评分规则
+engagement:
+  engagement_words:              # 参与度词汇
+    - breaking
+    - exclusive
+    - analysis
+    - forecast
+    - prediction
+    - guide
+    - tutorial
+    - review
+    - interview
+    - opinion
+
+  title_engagement_bonus: 0.3   # 标题参与度加分
+  question_bonus: 0.2           # 问题加分
+  call_to_action_bonus: 0.2     # 行动号召加分
+  data_bonus: 0.3               # 数据加分
+
+# 高级评分规则
+advanced:
+  enable_confidence_scoring: true # 启用置信度评分
+  enable_adaptive_scoring: true  # 启用自适应评分
+  enable_ml_scoring: false       # 启用机器学习评分
+  ml_model_path: null           # 机器学习模型路径
+
+# 监控配置
+monitoring:
+  enable_quality_trends: true   # 启用质量趋势
+  trend_interval_days: 7        # 趋势间隔（天）
+  enable_alerts: true          # 启用告警
+  alert_thresholds:             # 告警阈值
+    low_quality_rate: 0.3       # 低质量率
+    quality_decline: 0.1        # 质量下降率
+
+# 自定义规则
+custom_rules:
+  enabled: false                # 启用自定义规则
+  rules_path: rules/quality_rules.json # 规则路径
+  rule_types:                   # 规则类型
+    - content
+    - source
+    - author
+    - timing
+    - structure

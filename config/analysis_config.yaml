@@ -1,0 +1,264 @@
+# Analysis Configuration
+
+# Summarization Configuration
+summarization:
+  enabled: true
+  default_length: "medium"  # Options: very_short, short, medium, long, comprehensive
+  default_focus: "general"  # Options: general, market_impact, technical, regulatory, security, adoption
+  include_key_points: true
+  include_entities: true
+  include_sentiment: true
+  max_bullet_points: 5
+  language: "en"
+  style: "professional"  # Options: professional, casual, technical
+  output_format: "structured"  # Options: structured, plain_text, markdown
+
+  # Length settings
+  length_settings:
+    very_short:
+      target_sentences: 2
+      max_words: 50
+    short:
+      target_sentences: 5
+      max_words: 100
+    medium:
+      target_sentences: 10
+      max_words: 200
+    long:
+      target_sentences: 20
+      max_words: 400
+    comprehensive:
+      target_sentences: 30
+      max_words: 600
+
+# Sentiment Analysis Configuration
+sentiment_analysis:
+  enabled: true
+  enable_aspect_analysis: true
+  enable_intensity_scoring: true
+  enable_emotion_detection: true
+  enable_confidence_scoring: true
+  enable_context_analysis: true
+
+  # Sentiment aspects to analyze
+  aspects:
+    - overall
+    - market_sentiment
+    - regulatory_sentiment
+    - technology_sentiment
+    - adoption_sentiment
+    - security_sentiment
+
+  # Confidence thresholds
+  min_confidence_threshold: 0.3
+  high_confidence_threshold: 0.7
+
+  # Emotion detection
+  emotions_to_detect:
+    - fear
+    - greed
+    - uncertainty
+    - confidence
+    - excitement
+    - skepticism
+
+  language: "en"
+  output_format: "structured"
+  include_explanation: true
+  include_key_phrases: true
+  max_key_phrases: 10
+
+# Content Segmentation Configuration
+content_segmentation:
+  enabled: true
+  enable_hierarchical_segmentation: true
+  enable_content_categorization: true
+  enable_key_point_extraction: true
+  enable_section_summarization: true
+
+  # Section settings
+  max_section_length: 1000  # characters
+  min_section_length: 100   # characters
+
+  # Prioritized section types
+  prioritized_sections:
+    - introduction
+    - main_content
+    - conclusion
+
+  language: "en"
+  output_format: "structured"
+  include_section_stats: true
+
+# Entity Extraction Configuration
+entity_extraction:
+  enabled: true
+  enable_entity_linking: true
+  enable_relationship_extraction: true
+  enable_entity_disambiguation: true
+  enable_sentiment_association: true
+
+  # Entity types to prioritize
+  prioritized_types:
+    - cryptocurrency
+    - company
+    - person
+    - organization
+
+  # Extraction limits
+  max_entities_per_article: 50
+  min_entity_confidence: 0.3
+
+  include_entity_metadata: true
+  include_entity_context: true
+  language: "en"
+  output_format: "structured"
+
+# Market Impact Assessment Configuration
+market_impact:
+  enabled: true
+  enable_multi_factor_analysis: true
+  enable_correlation_analysis: true
+  enable_risk_assessment: true
+  enable_opportunity_identification: true
+
+  # Impact types to analyze
+  impact_types:
+    - price_volatility
+    - trading_volume
+    - market_sentiment
+    - regulatory_impact
+    - technology_adoption
+    - security_trust
+
+  # Timeframes to analyze
+  timeframes:
+    - immediate
+    - short_term
+    - medium_term
+
+  min_confidence_threshold: 0.4
+  include_probability_assessment: true
+  include_market_context: true
+  language: "en"
+  output_format: "structured"
+
+# Batch Processing Configuration
+batch_processing:
+  enabled: true
+  max_batch_size: 10
+  max_concurrent_requests: 5
+  processing_timeout: 60.0
+  retry_attempts: 3
+  retry_delay: 1.0
+
+  # Batch strategy
+  strategy: "adaptive"  # Options: sequential, parallel, semaphore, queue_based, adaptive
+
+  # Rate limiting
+  enable_rate_limiting: true
+  requests_per_minute: 60
+
+  # Memory management
+  enable_memory_management: true
+  max_memory_usage: 1073741824  # 1GB in bytes
+
+  # Progress tracking
+  enable_progress_tracking: true
+  enable_error_handling: true
+  enable_result_caching: true
+  priority_weighting: true
+
+# Caching Configuration
+caching:
+  enabled: true
+  cache_level: "hybrid"  # Options: memory, disk, hybrid
+  strategy: "lru"  # Options: lru, lfu, fifo, ttl
+
+  # Memory cache settings
+  max_memory_entries: 1000
+
+  # Disk cache settings
+  max_disk_entries: 10000
+  disk_cache_path: "./cache"
+
+  # Cache settings
+  default_ttl: 3600  # 1 hour in seconds
+  enable_compression: true
+  enable_persistence: true
+  cleanup_interval: 300  # 5 minutes
+  max_entry_size: 1048576  # 1MB
+
+  # Statistics
+  enable_stats: true
+  enable_background_cleanup: true
+
+# Quality Control Configuration
+quality_control:
+  enabled: true
+
+  # Confidence thresholds
+  min_overall_confidence: 0.5
+  high_quality_threshold: 0.8
+
+  # Processing time limits
+  max_processing_time: 30.0  # seconds
+  warning_processing_time: 15.0  # seconds
+
+  # Content validation
+  min_content_length: 100
+  max_content_length: 10000
+  validate_content_quality: true
+
+  # Result validation
+  validate_result_structure: true
+  validate_result_completeness: true
+
+  # Error handling
+  retry_on_failure: true
+  fallback_to_basic: true
+
+# Performance Optimization
+performance:
+  enabled: true
+
+  # Concurrency settings
+  max_workers: 4
+  thread_pool_size: 10
+
+  # Memory optimization
+  enable_memory_pooling: true
+  max_memory_per_task: 104857600  # 100MB
+
+  # Network optimization
+  enable_connection_pooling: true
+  connection_timeout: 30.0
+  read_timeout: 60.0
+
+  # Caching optimization
+  enable_smart_caching: true
+  cache_preload_enabled: false
+
+  # Batch optimization
+  optimal_batch_size: 8
+  batch_timeout: 45.0
+
+# Integration Settings
+integration:
+  # Pipeline integration
+  enable_pipeline_integration: true
+  pipeline_stage: "llm_analysis"  # Position in processing pipeline
+
+  # Result formatting
+  standardize_output_format: true
+  include_metadata: true
+  include_processing_stats: true
+
+  # Error reporting
+  detailed_error_reporting: true
+  error_notification_enabled: false
+
+  # Monitoring
+  enable_health_checks: true
+  health_check_interval: 60  # seconds
+  enable_metrics_collection: true

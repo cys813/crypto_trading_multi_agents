@@ -18,8 +18,10 @@ from ..models.market_data import MarketData
 from ..models.analysis_result import AnalysisResult, AnalysisDimension, AnalysisStatus, LLMAnalysis
 from ..models.signal import Signal, SignalType, SignalStrength
 from ..utils.performance_monitor import PerformanceMonitor
+from .llm_service import LLMService, ServiceConfig, LLMProviderType, ProviderConfig
 from .context_manager import ContextManager
 from .prompt_templates import PromptTemplates
+from ..config import ConfigurationManager, ConfigType, ConfigEnvironment
 
 
 @dataclass
@@ -54,11 +56,17 @@ class LLMAnalysisEngine:
     contextual analysis, signal evaluation, and market intelligence.
     """
 
-    def __init__(self, config: LLMConfig):
+    def __init__(self, config: LLMConfig, config_manager: Optional[ConfigurationManager] = None):
         """Initialize the LLM analysis engine."""
         self.config = config
         self.logger = logging.getLogger(__name__)
         self.performance_monitor = PerformanceMonitor()
+
+        # Initialize configuration manager
+        self.config_manager = config_manager or self._create_default_config_manager()
+
+        # Initialize LLM service
+        self.llm_service = self._create_llm_service()
 
         # Initialize components
         self.context_manager = ContextManager(config.context_window_size)
@@ -67,7 +75,7 @@ class LLMAnalysisEngine:
         # Thread pool for concurrent processing
         self.executor = ThreadPoolExecutor(max_workers=5)
 
-        # Analysis cache
+        # Analysis cache (LLM service handles main caching, this is for engine-specific caching)
         self.analysis_cache: Dict[str, Dict[str, Any]] = {}
         self.cache_lock = asyncio.Lock()
 
@@ -77,16 +85,61 @@ class LLMAnalysisEngine:
         self.cache_hit_rate = 0.0
         self.error_rate = 0.0
 
-        # Mock LLM client (in production, this would be actual API client)
-        self.llm_client = None
-        self._initialize_llm_client()
-
         self.logger.info("LLM analysis engine initialized")
 
-    def _initialize_llm_client(self):
-        """Initialize the LLM client (mock implementation)."""
-        # In a real implementation, this would initialize OpenAI, Azure OpenAI, or other LLM clients
-        self.logger.info("Initialized mock LLM client")
+    def _create_default_config_manager(self) -> ConfigurationManager:
+        """Create default configuration manager."""
+        return ConfigurationManager(config_dir="config", environment=ConfigEnvironment.DEVELOPMENT)
+
+    def _create_llm_service(self) -> LLMService:
+        """Create LLM service with configuration."""
+        # Load LLM configuration from config manager
+        llm_config = self.config_manager.get_config(ConfigType.LLM) or {}
+
+        # Create service config
+        provider_configs = {}
+        default_provider = LLMProviderType.MOCK
+        fallback_provider = LLMProviderType.MOCK
+
+        # Parse provider configurations
+        for provider_name, provider_data in llm_config.get("providers", {}).items():
+            try:
+                provider_type = LLMProviderType(provider_name)
+                provider_configs[provider_type] = ProviderConfig(
+                    provider_type=provider_type,
+                    model=provider_data.get("model", "gpt-4"),
+                    api_key=provider_data.get("api_key"),
+                    base_url=provider_data.get("base_url"),
+                    max_tokens=provider_data.get("max_tokens", 4000),
+                    temperature=provider_data.get("temperature", 0.7),
+                    timeout=provider_data.get("timeout", 30),
+                    metadata=provider_data
+                )
+
+                if provider_name == llm_config.get("default_provider", "mock"):
+                    default_provider = provider_type
+
+            except ValueError:
+                self.logger.warning(f"Unknown provider: {provider_name}")
+
+        # Create service config
+        service_config = ServiceConfig(
+            default_provider=default_provider,
+            fallback_provider=fallback_provider,
+            provider_configs=provider_configs,
+            max_concurrent_requests=10,
+            request_timeout=30,
+            max_retries=3,
+            enable_caching=self.config.enable_caching,
+            cache_ttl=self.config.cache_ttl_seconds,
+            enable_cost_tracking=True,
+            daily_budget=llm_config.get("cost_control", {}).get("daily_budget", 100.0),
+            monthly_budget=llm_config.get("cost_control", {}).get("monthly_budget", 2000.0),
+            max_context_size=self.config.context_window_size,
+            max_context_tokens=4000
+        )
+
+        return LLMService(service_config)
 
     async def analyze_market(self, market_data: MarketData, additional_context: Optional[Dict[str, Any]] = None) -> LLMAnalysis:
         """
@@ -102,29 +155,12 @@ class LLMAnalysisEngine:
         start_time = time.time()
 
         try:
-            # Check cache first
-            cache_key = self._generate_cache_key(market_data, additional_context)
-            cached_result = await self._get_cached_analysis(cache_key)
-
-            if cached_result:
-                self.logger.debug(f"Using cached LLM analysis for {market_data.symbol}")
-                return LLMAnalysis.from_dict(cached_result)
-
-            # Update context
-            await self.context_manager.update_context(market_data, additional_context)
-
-            # Generate analysis prompt
-            prompt = await self._generate_analysis_prompt(market_data, additional_context)
-
-            # Execute LLM analysis
-            llm_response = await self._execute_llm_analysis(prompt)
-
-            # Parse and structure the response
-            analysis_result = await self._parse_llm_response(llm_response, market_data)
-
-            # Cache the result
-            if self.config.enable_caching:
-                await self._cache_analysis(cache_key, analysis_result.to_dict())
+            # Use LLM service for analysis
+            analysis_result = await self.llm_service.analyze_market(
+                market_data,
+                template_name="long_analysis",
+                additional_context=additional_context
+            )
 
             # Update metrics
             self.total_analyses += 1
@@ -168,16 +204,22 @@ class LLMAnalysisEngine:
             # Combine analysis results
             combined_context = self._combine_analysis_results(analysis_results)
 
-            # Generate enhancement prompt
-            enhancement_prompt = await self._generate_enhancement_prompt(combined_context, market_data)
+            # Use LLM service for enhancement
+            enhancement_prompt = self.prompt_templates.render_template(
+                "analysis_enhancement",
+                {
+                    "original_analysis": str(analysis_results),
+                    "new_data": self._prepare_market_data_summary(market_data),
+                    "performance_metrics": {}
+                }
+            )
 
-            # Execute LLM enhancement
-            enhancement_response = await self._execute_llm_analysis(enhancement_prompt)
+            enhancement_response = await self.llm_service.generate_text(enhancement_prompt)
 
             # Apply enhancements to each analysis result
             enhanced_results = []
             for result in analysis_results:
-                enhanced_result = await self._apply_enhancements(result, enhancement_response)
+                enhanced_result = await self._apply_enhancements(result, {"response": enhancement_response})
                 enhanced_results.append(enhanced_result)
 
             return enhanced_results
@@ -198,14 +240,20 @@ class LLMAnalysisEngine:
             Signal quality evaluation results
         """
         try:
-            # Generate evaluation prompt
-            evaluation_prompt = await self._generate_signal_evaluation_prompt(signal, market_data)
+            # Use LLM service for signal evaluation
+            evaluation_prompt = self.prompt_templates.render_template(
+                "signal_evaluation",
+                {
+                    "signal_details": signal.to_dict(),
+                    "market_context": self._prepare_market_data_summary(market_data),
+                    "risk_factors": []
+                }
+            )
 
-            # Execute LLM evaluation
-            evaluation_response = await self._execute_llm_analysis(evaluation_prompt)
+            evaluation_response = await self.llm_service.generate_text(evaluation_prompt)
 
             # Parse evaluation results
-            quality_evaluation = self._parse_signal_evaluation(evaluation_response)
+            quality_evaluation = self._parse_signal_evaluation({"response": evaluation_response})
 
             return quality_evaluation
 

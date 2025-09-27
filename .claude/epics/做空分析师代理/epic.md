@@ -1,8 +1,8 @@
 ---
 name: 做空分析师代理
-status: draft
+status: in_progress
 created: 2025-09-25T19:05:00Z
-progress: 0%
+progress: 70%
 prd: .claude/prds/做空分析师代理.md
 github: https://github.com/cys813/crypto_trading_multi_agents/issues/40
 worktree: epic/做空分析师代理

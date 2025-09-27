@@ -5,8 +5,18 @@ Report analyzer for analyzing various data and generating insights
 import asyncio
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, timedelta
-import numpy as np
-import pandas as pd
+
+try:
+    import numpy as np
+    HAS_NUMPY = True
+except ImportError:
+    HAS_NUMPY = False
+
+try:
+    import pandas as pd
+    HAS_PANDAS = True
+except ImportError:
+    HAS_PANDAS = False
 
 from .models import (
     TechnicalAnalysis,

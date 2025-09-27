@@ -33,16 +33,16 @@ class NewsArticle:
     id: str
     title: str
     content: str
-    summary: Optional[str] = None
     url: str
+    summary: Optional[str] = None
     author: Optional[str] = None
-    published_at: datetime = None
-    source: NewsSourceType = None
+    published_at: Optional[datetime] = None
+    source: Optional[NewsSourceType] = None
     category: NewsCategory = NewsCategory.MARKET_NEWS
-    tags: List[str] = None
+    tags: Optional[List[str]] = None
     sentiment_score: Optional[float] = None
     relevance_score: Optional[float] = None
-    metadata: Dict[str, Any] = None
+    metadata: Optional[Dict[str, Any]] = None
 
     def __post_init__(self):
         if self.tags is None:

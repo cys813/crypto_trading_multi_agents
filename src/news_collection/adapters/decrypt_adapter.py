@@ -76,7 +76,7 @@ class DecryptAdapter(BaseNewsAdapter):
 
             # Add time filter if specified
             if since:
-                params("from") = since.isoformat()
+                params["from"] = since.isoformat()
 
             self.logger.debug(f"Fetching news from Decrypt with params: {params}")
 

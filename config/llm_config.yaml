@@ -1,0 +1,82 @@
+# LLM Configuration
+
+# LLM Service Provider
+provider: mock  # Options: openai, anthropic, local, mock
+
+# Provider-specific settings
+providers:
+  openai:
+    api_key: ""  # Set your OpenAI API key
+    model: "gpt-3.5-turbo"  # Options: gpt-3.5-turbo, gpt-4, gpt-4-turbo
+    base_url: "https://api.openai.com/v1"
+    max_tokens: 2000
+    temperature: 0.3
+    organization: ""  # Optional OpenAI organization ID
+
+  anthropic:
+    api_key: ""  # Set your Anthropic API key
+    model: "claude-3-sonnet-20240229"  # Options: claude-3-sonnet-20240229, claude-3-opus-20240229
+    base_url: "https://api.anthropic.com"
+    max_tokens: 2000
+    temperature: 0.3
+    version: "2023-06-01"
+
+  local:
+    endpoint: "http://localhost:8000"  # Local LLM service endpoint
+    model: "local-model"
+    max_tokens: 2000
+    temperature: 0.3
+
+  mock:
+    model: "mock-model"
+    max_tokens: 2000
+    temperature: 0.3
+
+# Global LLM settings
+max_tokens: 2000
+temperature: 0.3
+timeout: 30.0
+retry_attempts: 3
+retry_delay: 1.0
+
+# Caching settings
+enable_cache: true
+cache_ttl: 3600  # 1 hour in seconds
+cache_max_size: 1000
+
+# Rate limiting
+enable_rate_limiting: true
+requests_per_minute: 60
+
+# Performance settings
+max_concurrent_requests: 5
+batch_size: 10
+processing_timeout: 60.0
+
+# Error handling
+enable_error_handling: true
+fallback_to_mock: true
+log_errors: true
+
+# Logging
+log_level: "INFO"  # Options: DEBUG, INFO, WARNING, ERROR
+log_responses: false
+log_request_details: false
+
+# Security
+sanitize_inputs: true
+validate_outputs: true
+max_input_length: 10000
+max_output_length: 5000
+
+# Cost control (for paid APIs)
+enable_cost_tracking: true
+max_monthly_budget: 100.0
+cost_alert_threshold: 0.8  # Alert when 80% of budget is used
+
+# Model selection strategy
+model_selection: "default"  # Options: default, cheapest, fastest, best_quality
+
+# Custom endpoints (for enterprise setups)
+custom_endpoints: {}
+use_custom_endpoints: false

@@ -1,0 +1,227 @@
+# Multi-source News Collection Configuration
+
+# Collection Strategy Configuration
+collection:
+  # Default strategy for collection
+  default_strategy: "incremental"
+
+  # Time window management (days)
+  time_window_days: 15
+
+  # Maximum articles per source per collection
+  max_articles_per_source: 100
+
+  # Concurrency settings
+  max_concurrent_collections: 5
+  max_concurrent_per_source: 10
+
+  # Retry settings
+  max_retry_attempts: 3
+  retry_delay_minutes: 5
+
+  # Cache settings
+  enable_cache: true
+  cache_size_limit: 1000
+  cache_ttl_minutes: 1440  # 24 hours
+
+# Scheduler Configuration
+scheduler:
+  # Check interval for scheduled jobs (seconds)
+  check_interval: 30
+
+  # Maximum concurrent jobs
+  max_concurrent_jobs: 5
+
+  # State persistence
+  state_file: "scheduler_state.json"
+
+  # Job timeouts
+  job_timeout_minutes: 30
+
+  # Health check interval (seconds)
+  health_check_interval: 60
+
+# Incremental Tracker Configuration
+incremental_tracker:
+  # Time window for tracking (days)
+  window_days: 15
+
+  # Maximum articles in memory
+  max_articles_in_memory: 10000
+
+  # Persistence interval (seconds)
+  persistence_interval: 300  # 5 minutes
+
+  # Storage path
+  storage_path: "incremental_tracker_data"
+
+  # Cleanup interval (hours)
+  cleanup_interval_hours: 24
+
+# Relevance Filter Configuration
+relevance_filter:
+  # Minimum relevance score threshold
+  min_relevance_score: 50.0
+
+  # Relevance level thresholds
+  high_relevance_threshold: 90.0
+  medium_relevance_threshold: 70.0
+
+  # Confidence threshold
+  confidence_threshold: 0.7
+
+  # Additional keywords
+  additional_keywords:
+    defi_terms:
+      - "yield farming"
+      - "liquidity mining"
+      - "flash loans"
+      - "governance tokens"
+      - "dex"
+      - "amm"
+
+    nft_terms:
+      - "digital art"
+      - "nft marketplace"
+      - "metaverse"
+      - "virtual land"
+      - "gaming nft"
+
+    layer2_terms:
+      - "layer 2"
+      - "scaling solution"
+      - "rollup"
+      - "zk-rollup"
+      - "optimistic rollup"
+      - "sidechain"
+
+  # Additional cryptocurrencies
+  additional_cryptocurrencies:
+    "MATIC":
+      name: "Polygon"
+      aliases: ["Polygon", "polygon", "MATIC"]
+      categories: ["layer2", "scaling", "defi"]
+      priority: 6
+
+    "UNI":
+      name: "Uniswap"
+      aliases: ["Uniswap", "uniswap", "UNI"]
+      categories: ["defi", "dex", "governance"]
+      priority: 7
+
+    "LINK":
+      name: "Chainlink"
+      aliases: ["Chainlink", "chainlink", "LINK"]
+      categories: ["oracle", "defi", "infrastructure"]
+      priority: 7
+
+# Priority Engine Configuration
+priority_engine:
+  # Priority thresholds
+  critical_threshold: 90
+  high_threshold: 75
+  medium_threshold: 60
+  low_threshold: 40
+
+  # Source reliability scores (1-10)
+  source_reliability:
+    coindesk: 9.0
+    cointelegraph: 8.5
+    decrypt: 8.0
+    bloomberg: 9.5
+    reuters: 9.0
+    cnbc: 8.0
+    theblock: 8.5
+    cryptoslate: 7.5
+
+  # Breakout news detection
+  breakout_detection:
+    price_movement_threshold: 5.0  # 5% price change
+    volume_spike_threshold: 3.0     # 3x volume increase
+    social_mention_threshold: 10.0  # 10x social mentions
+    news_density_threshold: 5.0     # 5x news density
+
+# Load Balancer Configuration
+load_balancer:
+  # Balancing strategy
+  strategy: "adaptive"  # round_robin, weighted_round_robin, least_connections, priority_based, response_time, adaptive
+
+  # Connection limits
+  max_concurrent_per_source: 10
+
+  # Health check settings
+  health_check_interval: 30  # seconds
+
+  # Backoff settings
+  backoff_multiplier: 2.0
+  max_backoff_time: 300  # seconds
+
+  # Failure thresholds
+  failure_threshold: 3
+  recovery_threshold: 5
+
+# Collection Optimizer Configuration
+optimizer:
+  # Optimization target
+  target: "balanced"  # speed, accuracy, efficiency, reliability, balanced
+
+  # Optimization interval (seconds)
+  optimization_interval: 300  # 5 minutes
+
+  # Performance history size
+  performance_history_size: 100
+
+  # Optimization threshold (0-1)
+  optimization_threshold: 0.1
+
+  # Cache settings
+  cache_size_limit: 1000
+
+  # Default parameters
+  batch_size: 50
+  concurrency_limit: 5
+  timeout_multiplier: 1.0
+  retry_attempts: 3
+
+  # Feature flags
+  cache_enabled: true
+  prefetch_enabled: true
+  compression_enabled: true
+  adaptive_batching: true
+  smart_retry: true
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+  # File logging
+  file_logging:
+    enabled: true
+    filename: "collection.log"
+    max_size_mb: 100
+    backup_count: 5
+
+  # Performance logging
+  performance_logging:
+    enabled: true
+    interval_seconds: 60
+
+# Monitoring Configuration
+monitoring:
+  # Metrics collection
+  metrics_enabled: true
+  metrics_interval_seconds: 30
+
+  # Alerting thresholds
+  alerts:
+    high_error_rate: 10.0  # percentage
+    low_success_rate: 80.0  # percentage
+    high_latency: 5000  # milliseconds
+    low_throughput: 10  # articles per minute
+
+  # Export metrics
+  export_metrics:
+    enabled: false
+    endpoint: "http://localhost:9090"
+    interval_seconds: 60

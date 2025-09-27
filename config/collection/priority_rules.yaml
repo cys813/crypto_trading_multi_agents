@@ -1,0 +1,342 @@
+# Collection Priority Rules Configuration
+
+# Priority Thresholds
+thresholds:
+  critical: 90    # Immediate action required
+  high: 75        # Process within 30 minutes
+  medium: 60      # Process within 2 hours
+  low: 40         # Process within 6 hours
+  routine: 0      # Process within 24 hours
+
+# Source Priority Scores (1-10, higher = more important)
+source_priorities:
+  # Tier 1 Sources (Highest Priority)
+  tier_1:
+    coindesk: 10
+    cointelegraph: 9
+    bloomberg_crypto: 9
+    reuters_crypto: 8
+
+  # Tier 2 Sources (High Priority)
+  tier_2:
+    decrypt: 8
+    theblock: 8
+    cryptoslate: 7
+    coinmarketcap: 7
+
+  # Tier 3 Sources (Medium Priority)
+  tier_3:
+    ambcrypto: 6
+    newsbtc: 6
+    bitcoinist: 5
+    ethnews: 5
+
+  # Tier 4 Sources (Low Priority)
+  tier_4:
+    cryptoglobe: 4
+    zycrypto: 4
+    dailyhodl: 3
+    nulltx: 3
+
+# Content Type Priority Weights
+content_weights:
+  # Breaking news (highest priority)
+  breaking_news:
+    weight: 0.40
+    keywords:
+      - "breaking"
+      - "just in"
+      - "developing"
+      - "urgent"
+      - "alert"
+
+  # Market moving news
+  market_moving:
+    weight: 0.35
+    keywords:
+      - "sec approval"
+      - "regulation"
+      - "ban"
+      - "lawsuit"
+      - "partnership"
+      - "acquisition"
+      - "funding"
+      - "ipo"
+      - "listing"
+
+  # Technical developments
+  technical:
+    weight: 0.25
+    keywords:
+      - "upgrade"
+      - "hard fork"
+      - "soft fork"
+      - "protocol"
+      - "network"
+      - "development"
+      - "launch"
+      - "release"
+
+  # Analysis and opinion
+  analysis:
+    weight: 0.15
+    keywords:
+      - "analysis"
+      - "prediction"
+      - "forecast"
+      - "opinion"
+      - "outlook"
+      - "review"
+
+# Time-based Priority Modifiers
+time_modifiers:
+  # Freshness boost (within 1 hour)
+  fresh_content:
+    time_window_minutes: 60
+    priority_boost: 15
+
+  # Recent content boost (within 6 hours)
+  recent_content:
+    time_window_minutes: 360
+    priority_boost: 8
+
+  # Stale content penalty (older than 24 hours)
+  stale_content:
+    time_window_hours: 24
+    priority_penalty: 10
+
+  # Very stale content penalty (older than 3 days)
+  very_stale_content:
+    time_window_hours: 72
+    priority_penalty: 20
+
+# Category Priority Multipliers
+category_multipliers:
+  # High priority categories
+  high_priority:
+    categories:
+      - "breaking"
+      - "regulation"
+      - "security"
+    multiplier: 1.5
+
+  # Medium priority categories
+  medium_priority:
+    categories:
+      - "market_analysis"
+      - "technology"
+      - "adoption"
+    multiplier: 1.2
+
+  # Low priority categories
+  low_priority:
+    categories:
+      - "general"
+      - "opinion"
+    multiplier: 0.8
+
+# Cryptocurrency Priority Tiers
+crypto_priority:
+  # Tier 1 cryptocurrencies (highest priority)
+  tier_1:
+    symbols: ["BTC", "ETH", "BNB"]
+    priority_boost: 20
+
+  # Tier 2 cryptocurrencies (high priority)
+  tier_2:
+    symbols: ["ADA", "SOL", "DOT", "DOGE", "AVAX", "MATIC", "LINK", "UNI"]
+    priority_boost: 15
+
+  # Tier 3 cryptocurrencies (medium priority)
+  tier_3:
+    symbols: ["XRP", "LTC", "BCH", "ATOM", "ALGO", "VET", "THETA", "FTM"]
+    priority_boost: 10
+
+  # Tier 4 cryptocurrencies (low priority)
+  tier_4:
+    symbols: ["TRX", "XLM", "EOS", "XTZ", "KSM", "NEAR", "ONE", "CRO"]
+    priority_boost: 5
+
+# Source Reliability Scores (0-10)
+reliability_scores:
+  # Highly reliable sources
+  highly_reliable:
+    sources: ["coindesk", "bloomberg_crypto", "reuters_crypto"]
+    score: 9.5
+
+  # Reliable sources
+  reliable:
+    sources: ["cointelegraph", "decrypt", "theblock"]
+    score: 8.5
+
+  # Moderately reliable sources
+  moderately_reliable:
+    sources: ["cryptoslate", "coinmarketcap", "ambcrypto"]
+    score: 7.0
+
+  # Less reliable sources
+  less_reliable:
+    sources: ["newsbtc", "bitcoinist", "cryptoglobe"]
+    score: 5.5
+
+# Breakthrough News Detection Rules
+breakthrough_detection:
+  # Price movement triggers
+  price_triggers:
+    percentage_change: 5.0  # 5% price movement
+    time_window_minutes: 60   # Within 1 hour
+    priority_multiplier: 2.0
+
+  # Volume spike triggers
+  volume_triggers:
+    volume_multiplier: 3.0    # 3x normal volume
+    time_window_minutes: 60   # Within 1 hour
+    priority_multiplier: 1.8
+
+  # Social media triggers
+  social_triggers:
+    mention_multiplier: 10.0  # 10x normal mentions
+    time_window_minutes: 30   # Within 30 minutes
+    priority_multiplier: 1.5
+
+  # News density triggers
+  news_density:
+    article_multiplier: 5.0   # 5x normal article density
+    time_window_minutes: 15   # Within 15 minutes
+    priority_multiplier: 1.7
+
+# Urgency Indicators
+urgency_indicators:
+  # High urgency keywords
+  high_urgency:
+    keywords:
+      - "immediately"
+      - "urgent"
+      - "critical"
+      - "emergency"
+      - "alert"
+      - "breaking"
+      - "just in"
+    score_boost: 25
+
+  # Medium urgency keywords
+  medium_urgency:
+    keywords:
+      - "soon"
+      - "upcoming"
+      - "approaching"
+      - "expected"
+      - "scheduled"
+    score_boost: 15
+
+  # Low urgency keywords
+  low_urgency:
+    keywords:
+      - "planned"
+      - "future"
+      - "eventually"
+      - "later"
+    score_boost: 5
+
+# Quality Score Factors
+quality_factors:
+  # Content length factors
+  content_length:
+    minimum_words: 100
+    optimal_words: 500
+    maximum_words: 2000
+    score_range: [0, 10]
+
+  # Source reputation factors
+  source_reputation:
+    highly_reliable_bonus: 15
+    reliable_bonus: 10
+    moderately_reliable_bonus: 5
+    unreliable_penalty: 10
+
+  # Article structure factors
+  article_structure:
+    has_headline: 5
+    has_summary: 8
+    has_author: 3
+    has_timestamp: 5
+    has_sources: 7
+
+# Priority Adjustment Rules
+adjustment_rules:
+  # Performance-based adjustments
+  performance_based:
+    # Boost sources with high success rates
+    high_success_rate_boost:
+      success_rate_threshold: 95
+      priority_boost: 5
+
+    # Penalize sources with low success rates
+    low_success_rate_penalty:
+      success_rate_threshold: 70
+      priority_penalty: 10
+
+    # Boost sources with fast response times
+    fast_response_boost:
+      response_time_threshold: 1000  # milliseconds
+      priority_boost: 8
+
+    # Penalize sources with slow response times
+    slow_response_penalty:
+      response_time_threshold: 5000  # milliseconds
+      priority_penalty: 5
+
+  # Load-based adjustments
+  load_based:
+    # Reduce priority for overloaded sources
+    overload_penalty:
+      load_threshold: 80  # percentage
+      priority_penalty: 15
+
+    # Boost underutilized sources
+    underutilized_boost:
+      load_threshold: 20  # percentage
+      priority_boost: 10
+
+# Scheduled Priority Boosts
+scheduled_boosts:
+  # Market hours boost
+  market_hours:
+    timezone: "UTC"
+    active_hours: [13, 14, 15, 16, 17, 18, 19, 20]  # 9 AM - 4 PM EST
+    boost_multiplier: 1.2
+
+  # Weekend adjustment
+  weekend:
+    days: [5, 6]  # Saturday, Sunday
+    boost_multiplier: 0.8
+
+  # Major events boost
+  major_events:
+    # Bitcoin halving
+    bitcoin_halving:
+      date: "2024-04-20"
+      boost_days_before: 7
+      boost_days_after: 7
+      boost_multiplier: 2.0
+
+    # Ethereum merge (example)
+    ethereum_merge:
+      date: "2022-09-15"
+      boost_days_before: 3
+      boost_days_after: 3
+      boost_multiplier: 1.8
+
+# Priority Cache Settings
+cache_settings:
+  # Cache duration for priority scores
+  cache_duration_minutes: 30
+
+  # Maximum cache size
+  max_cache_size: 10000
+
+  # Cache invalidation triggers
+  invalidation_triggers:
+    - "source_status_change"
+    - "market_volatility_spike"
+    - "breaking_news_detected"

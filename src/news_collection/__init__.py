@@ -1,55 +1,58 @@
 """
-News Collection Agent Framework
-
-A comprehensive framework for collecting cryptocurrency news from multiple sources
-with unified adapter interfaces, connection management, health monitoring, and
-automated failover mechanisms.
+新闻收集代理 - 多源新闻收集和管理系统
 """
 
-from .news_manager import NewsCollectionManager
-from .models import (
+from .models.base import (
     NewsArticle,
-    NewsSource,
-    NewsSourceType,
+    NewsSourceConfig,
+    HealthStatus,
+    NewsQuery,
+    NewsQueryResult,
     NewsCategory,
-    ConnectionStatus,
-    HealthMetrics,
-    RateLimitInfo,
+    NewsSourceStatus,
+    ConnectionInfo
 )
-from .core import ConnectionManager, HealthMonitor, HealthAlert
-from .adapters import (
-    BaseNewsAdapter,
-    CoinDeskAdapter,
-    CoinTelegraphAdapter,
-    DecryptAdapter,
-)
-from .utils import RateLimiter
+
+from .core.adapter import NewsSourceAdapter, NewsSourceAdapterFactory
+from .core.connection_manager import ConnectionManager, ConnectionPoolConfig
+from .core.health_checker import HealthChecker, HealthCheckConfig, HealthAlert
+from .core.config_manager import ConfigManager, ConfigWatcherConfig
+from .core.error_handler import ErrorHandler, ErrorType, ErrorSeverity, RetryPolicy
+
+from .adapters.coindesk_adapter import CoinDeskAdapter
+from .adapters.cointelegraph_adapter import CoinTelegraphAdapter
+from .adapters.decrypt_adapter import DecryptAdapter
 
 __version__ = "1.0.0"
-__author__ = "Crypto Trading Multi Agents Team"
-__email__ = "team@crypto-trading-agents.com"
+__author__ = "Crypto Trading Multi-Agents Team"
 
 __all__ = [
-    # Main manager
-    "NewsCollectionManager",
-
-    # Core components
-    "ConnectionManager",
-    "HealthMonitor",
-    "HealthAlert",
-    "RateLimiter",
-
-    # Data models
+    # Models
     "NewsArticle",
-    "NewsSource",
-    "NewsSourceType",
+    "NewsSourceConfig",
+    "HealthStatus",
+    "NewsQuery",
+    "NewsQueryResult",
     "NewsCategory",
-    "ConnectionStatus",
-    "HealthMetrics",
-    "RateLimitInfo",
+    "NewsSourceStatus",
+    "ConnectionInfo",
+
+    # Core Components
+    "NewsSourceAdapter",
+    "NewsSourceAdapterFactory",
+    "ConnectionManager",
+    "ConnectionPoolConfig",
+    "HealthChecker",
+    "HealthCheckConfig",
+    "HealthAlert",
+    "ConfigManager",
+    "ConfigWatcherConfig",
+    "ErrorHandler",
+    "ErrorType",
+    "ErrorSeverity",
+    "RetryPolicy",
 
     # Adapters
-    "BaseNewsAdapter",
     "CoinDeskAdapter",
     "CoinTelegraphAdapter",
     "DecryptAdapter",

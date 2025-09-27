@@ -1,222 +1,176 @@
+"""
+测试基础数据模型
+"""
+
 import pytest
-from datetime import datetime, timezone
-from news_collection.models import (
+from datetime import datetime
+from news_collection.models.base import (
     NewsArticle,
-    NewsSource,
-    NewsSourceType,
+    NewsSourceConfig,
+    HealthStatus,
+    NewsQuery,
     NewsCategory,
-    ConnectionStatus,
-    HealthMetrics,
-    RateLimitInfo,
+    NewsSourceStatus
 )
 
 
-class TestNewsModels:
-    """Test cases for news data models."""
+class TestNewsArticle:
+    """测试新闻文章模型"""
 
     def test_news_article_creation(self):
-        """Test NewsArticle creation and default values."""
+        """测试新闻文章创建"""
         article = NewsArticle(
-            id="test_123",
-            title="Test Article",
-            content="This is test content",
-            url="https://example.com/article"
+            id="test_001",
+            title="测试新闻标题",
+            content="测试新闻内容"
         )
 
-        assert article.id == "test_123"
-        assert article.title == "Test Article"
-        assert article.content == "This is test content"
-        assert article.url == "https://example.com/article"
-        assert article.summary is None
-        assert article.author is None
-        assert article.category == NewsCategory.MARKET_NEWS
+        assert article.id == "test_001"
+        assert article.title == "测试新闻标题"
+        assert article.content == "测试新闻内容"
         assert article.tags == []
         assert article.metadata == {}
-        assert article.published_at is not None
+        assert article.category == NewsCategory.GENERAL
 
-    def test_news_article_with_all_fields(self):
-        """Test NewsArticle with all fields provided."""
-        now = datetime.now(timezone.utc)
+    def test_news_article_with_optional_fields(self):
+        """测试带可选字段的新闻文章"""
         article = NewsArticle(
-            id="test_456",
-            title="Full Article",
-            content="Full content here",
-            summary="Article summary",
-            url="https://example.com/full",
-            author="John Doe",
-            published_at=now,
-            source=NewsSourceType.COINDESK,
-            category=NewsCategory.TECHNOLOGY,
-            tags=["blockchain", "innovation"],
-            sentiment_score=0.8,
-            relevance_score=0.9,
-            metadata={"views": 1000}
+            id="test_002",
+            title="测试新闻标题",
+            content="测试新闻内容",
+            author="测试作者",
+            published_at=datetime.now(),
+            source="测试来源",
+            category=NewsCategory.BREAKING,
+            tags=["比特币", "加密货币"],
+            metadata={"importance": "high"}
         )
 
-        assert article.id == "test_456"
-        assert article.title == "Full Article"
-        assert article.content == "Full content here"
-        assert article.summary == "Article summary"
-        assert article.url == "https://example.com/full"
-        assert article.author == "John Doe"
-        assert article.published_at == now
-        assert article.source == NewsSourceType.COINDESK
-        assert article.category == NewsCategory.TECHNOLOGY
-        assert article.tags == ["blockchain", "innovation"]
-        assert article.sentiment_score == 0.8
-        assert article.relevance_score == 0.9
-        assert article.metadata == {"views": 1000}
+        assert article.author == "测试作者"
+        assert article.source == "测试来源"
+        assert article.category == NewsCategory.BREAKING
+        assert article.tags == ["比特币", "加密货币"]
+        assert article.metadata == {"importance": "high"}
 
-    def test_news_source_creation(self):
-        """Test NewsSource creation."""
-        source = NewsSource(
-            name="Test Source",
-            source_type=NewsSourceType.COINDESK,
-            base_url="https://api.test.com"
+
+class TestNewsSourceConfig:
+    """测试新闻源配置模型"""
+
+    def test_news_source_config_creation(self):
+        """测试新闻源配置创建"""
+        config = NewsSourceConfig(
+            name="test_source",
+            adapter_type="test_adapter",
+            base_url="https://example.com/api"
         )
 
-        assert source.name == "Test Source"
-        assert source.source_type == NewsSourceType.COINDESK
-        assert source.base_url == "https://api.test.com"
-        assert source.api_key is None
-        assert source.rate_limit_per_minute == 60
-        assert source.timeout_seconds == 30
-        assert source.enabled is True
-        assert source.priority == 1
-        assert source.config == {}
+        assert config.name == "test_source"
+        assert config.adapter_type == "test_adapter"
+        assert config.base_url == "https://example.com/api"
+        assert config.enabled == True
+        assert config.priority == 1
+        assert config.headers == {}
 
-    def test_news_source_with_config(self):
-        """Test NewsSource with custom configuration."""
-        source = NewsSource(
-            name="Custom Source",
-            source_type=NewsSourceType.COINTELEGRAPH,
-            base_url="https://api.custom.com",
-            api_key="test_key_123",
-            rate_limit_per_minute=100,
-            timeout_seconds=45,
+    def test_news_source_config_with_optional_fields(self):
+        """测试带可选字段的新闻源配置"""
+        config = NewsSourceConfig(
+            name="test_source",
+            adapter_type="test_adapter",
+            base_url="https://example.com/api",
+            api_key="test_key",
+            rate_limit=60,
+            timeout=15,
+            headers={"Authorization": "Bearer token"},
             enabled=False,
-            priority=3,
-            config={"custom_param": "value"}
+            priority=5
         )
 
-        assert source.name == "Custom Source"
-        assert source.source_type == NewsSourceType.COINTELEGRAPH
-        assert source.api_key == "test_key_123"
-        assert source.rate_limit_per_minute == 100
-        assert source.timeout_seconds == 45
-        assert source.enabled is False
-        assert source.priority == 3
-        assert source.config == {"custom_param": "value"}
+        assert config.api_key == "test_key"
+        assert config.rate_limit == 60
+        assert config.timeout == 15
+        assert config.headers == {"Authorization": "Bearer token"}
+        assert config.enabled == False
+        assert config.priority == 5
 
-    def test_connection_status_creation(self):
-        """Test ConnectionStatus creation."""
-        now = datetime.now()
-        status = ConnectionStatus(
-            source_name="Test Source",
-            is_connected=True,
-            response_time_ms=250.5,
-            last_checked=now
+
+class TestHealthStatus:
+    """测试健康状态模型"""
+
+    def test_health_status_creation(self):
+        """测试健康状态创建"""
+        status = HealthStatus(
+            is_healthy=True,
+            response_time=150.5,
+            status=NewsSourceStatus.ONLINE,
+            last_check=datetime.now()
         )
 
-        assert status.source_name == "Test Source"
-        assert status.is_connected is True
-        assert status.response_time_ms == 250.5
-        assert status.last_checked == now
-        assert status.error_message is None
+        assert status.is_healthy == True
+        assert status.response_time == 150.5
+        assert status.status == NewsSourceStatus.ONLINE
         assert status.consecutive_failures == 0
-        assert status.last_success is None
+        assert status.consecutive_successes == 0
 
-    def test_connection_status_with_errors(self):
-        """Test ConnectionStatus with error information."""
-        now = datetime.now()
-        status = ConnectionStatus(
-            source_name="Failed Source",
-            is_connected=False,
-            response_time_ms=5000.0,
-            last_checked=now,
-            error_message="Connection timeout",
+    def test_health_status_with_errors(self):
+        """测试带错误信息的健康状态"""
+        status = HealthStatus(
+            is_healthy=False,
+            response_time=5000.0,
+            status=NewsSourceStatus.OFFLINE,
+            last_check=datetime.now(),
+            error_message="连接超时",
             consecutive_failures=3,
-            last_success=now
+            consecutive_successes=0
         )
 
-        assert status.source_name == "Failed Source"
-        assert status.is_connected is False
-        assert status.response_time_ms == 5000.0
-        assert status.error_message == "Connection timeout"
+        assert status.is_healthy == False
+        assert status.error_message == "连接超时"
         assert status.consecutive_failures == 3
-        assert status.last_success == now
 
-    def test_health_metrics_creation(self):
-        """Test HealthMetrics creation."""
-        now = datetime.now()
-        metrics = HealthMetrics(
-            source_name="Test Source",
-            uptime_percentage=99.5,
-            average_response_time_ms=150.0,
-            success_rate=98.2,
-            requests_per_minute=45.5,
-            error_count_24h=2,
-            last_updated=now
+
+class TestNewsQuery:
+    """测试新闻查询模型"""
+
+    def test_news_query_creation(self):
+        """测试新闻查询创建"""
+        query = NewsQuery()
+
+        assert query.keywords == []
+        assert query.categories == []
+        assert query.sources == []
+        assert query.limit == 50
+        assert query.offset == 0
+
+    def test_news_query_with_parameters(self):
+        """测试带参数的新闻查询"""
+        query = NewsQuery(
+            keywords=["比特币", "以太坊"],
+            categories=[NewsCategory.MARKET_ANALYSIS, NewsCategory.TECHNOLOGY],
+            sources=["coindesk", "cointelegraph"],
+            limit=100,
+            offset=20
         )
 
-        assert metrics.source_name == "Test Source"
-        assert metrics.uptime_percentage == 99.5
-        assert metrics.average_response_time_ms == 150.0
-        assert metrics.success_rate == 98.2
-        assert metrics.requests_per_minute == 45.5
-        assert metrics.error_count_24h == 2
-        assert metrics.last_updated == now
+        assert query.keywords == ["比特币", "以太坊"]
+        assert len(query.categories) == 2
+        assert query.sources == ["coindesk", "cointelegraph"]
+        assert query.limit == 100
+        assert query.offset == 20
 
-    def test_rate_limit_info_creation(self):
-        """Test RateLimitInfo creation."""
-        now = datetime.now()
-        rate_info = RateLimitInfo(
-            source_name="Test Source",
-            requests_remaining=50,
-            requests_limit=60,
-            reset_time=now,
-            retry_after=30
+    def test_news_query_with_dates(self):
+        """测试带日期的新闻查询"""
+        start_date = datetime(2024, 1, 1)
+        end_date = datetime(2024, 12, 31)
+
+        query = NewsQuery(
+            start_date=start_date,
+            end_date=end_date,
+            keywords=["测试"]
         )
 
-        assert rate_info.source_name == "Test Source"
-        assert rate_info.requests_remaining == 50
-        assert rate_info.requests_limit == 60
-        assert rate_info.reset_time == now
-        assert rate_info.retry_after == 30
+        assert query.start_date == start_date
+        assert query.end_date == end_date
 
-    def test_rate_limit_info_without_retry(self):
-        """Test RateLimitInfo without retry_after."""
-        now = datetime.now()
-        rate_info = RateLimitInfo(
-            source_name="Test Source",
-            requests_remaining=10,
-            requests_limit=60,
-            reset_time=now
-        )
 
-        assert rate_info.source_name == "Test Source"
-        assert rate_info.requests_remaining == 10
-        assert rate_info.requests_limit == 60
-        assert rate_info.reset_time == now
-        assert rate_info.retry_after is None
-
-    def test_news_source_type_values(self):
-        """Test NewsSourceType enum values."""
-        assert NewsSourceType.COINDESK.value == "coindesk"
-        assert NewsSourceType.COINTELEGRAPH.value == "cointelegraph"
-        assert NewsSourceType.DECRYPT.value == "decrypt"
-        assert NewsSourceType.CRYPTOSLATE.value == "cryptoslate"
-        assert NewsSourceType.THE_BLOCK.value == "the_block"
-
-    def test_news_category_values(self):
-        """Test NewsCategory enum values."""
-        assert NewsCategory.MARKET_NEWS.value == "market_news"
-        assert NewsCategory.TECHNOLOGY.value == "technology"
-        assert NewsCategory.REGULATION.value == "regulation"
-        assert NewsCategory.SECURITY.value == "security"
-        assert NewsCategory.ADOPTION.value == "adoption"
-        assert NewsCategory.DEFI.value == "defi"
-        assert NewsCategory.NFT.value == "nft"
-        assert NewsCategory.EXCHANGE.value == "exchange"
-        assert NewsCategory.MINING.value == "mining"
-        assert NewsCategory.TRADING.value == "trading"
+if __name__ == "__main__":
+    pytest.main([__file__])

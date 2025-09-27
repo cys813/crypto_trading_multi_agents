@@ -1,0 +1,367 @@
+# Cryptocurrency Relevance Keywords Configuration
+
+# High Relevance Keywords
+high_relevance:
+  # Core cryptocurrency terms
+  core:
+    - "cryptocurrency"
+    - "crypto"
+    - "blockchain"
+    - "decentralized"
+    - "defi"
+    - "nft"
+    - "nfts"
+    - "token"
+    - "tokens"
+    - "coin"
+    - "coins"
+    - "altcoin"
+    - "altcoins"
+    - "mining"
+    - "miner"
+    - "wallet"
+    - "exchange"
+    - "trading"
+    - "bitcoin"
+    - "ethereum"
+    - "web3"
+    - "metaverse"
+
+  # DeFi specific terms
+  defi:
+    - "yield farming"
+    - "liquidity mining"
+    - "flash loans"
+    - "governance tokens"
+    - "dex"
+    - "amm"
+    - "liquidity pool"
+    - "staking"
+    - "uniswap"
+    - "sushiswap"
+    - "compound"
+    - "aave"
+    - "makerdao"
+    - "curve"
+    - "balancer"
+
+  # NFT specific terms
+  nft:
+    - "digital art"
+    - "nft marketplace"
+    - "virtual land"
+    - "gaming nft"
+    - "pfp"
+    - "profile picture"
+    - "opensea"
+    - "rarible"
+    - "foundation"
+    - "super rare"
+    - "nifty gateway"
+
+# Market Terms
+market_terms:
+  # Price and trading terms
+  trading:
+    - "price"
+    - "prices"
+    - "market"
+    - "markets"
+    - "trading"
+    - "trade"
+    - "buy"
+    - "sell"
+    - "bid"
+    - "ask"
+    - "spread"
+    - "volume"
+    - "liquidity"
+
+  # Market sentiment
+  sentiment:
+    - "bull"
+    - "bear"
+    - "bullish"
+    - "bearish"
+    - "fud"
+    - "fomo"
+    - "pump"
+    - "dump"
+    - "rally"
+    - "crash"
+    - "correction"
+
+  # Technical analysis
+  technical:
+    - "resistance"
+    - "support"
+    - "trend"
+    - "breakout"
+    - "consolidation"
+    - "volatility"
+    - "momentum"
+    - "indicators"
+    - "rsi"
+    - "macd"
+    - "moving average"
+
+  # Key levels and patterns
+  patterns:
+    - "ATH"  # All-time high
+    - "all-time high"
+    - "ATL"  # All-time low
+    - "all-time low"
+    - "market cap"
+    - "market capitalization"
+    - "fully diluted valuation"
+    - "fdv"
+
+  # Trading instruments
+  instruments:
+    - "futures"
+    - "options"
+    - "perpetuals"
+    - "leverage"
+    - "margin"
+    - "spot"
+    - "derivatives"
+    - "swaps"
+
+# Technology Terms
+technology_terms:
+  # Consensus mechanisms
+  consensus:
+    - "consensus"
+    - "proof of work"
+    - "proof of stake"
+    - "pos"
+    - "pow"
+    - "dpos"
+    - "proof of authority"
+    - "proof of history"
+
+  # Network and protocol
+  network:
+    - "hash rate"
+    - "hashrate"
+    - "block"
+    - "blocks"
+    - "chain"
+    - "fork"
+    - "hard fork"
+    - "soft fork"
+    - "upgrade"
+    - "protocol"
+    - "network"
+    - "node"
+    - "nodes"
+    - "validator"
+    - "validation"
+
+  # Cryptography and security
+  security:
+    - "encryption"
+    - "cryptography"
+    - "hash"
+    - "digital signature"
+    - "private key"
+    - "public key"
+    - "wallet"
+    - "seed phrase"
+    - "mnemonic"
+    - "cold storage"
+    - "hot wallet"
+
+  # Scaling solutions
+  scaling:
+    - "layer 2"
+    - "l2"
+    - "sidechain"
+    - "rollup"
+    - "zk-rollup"
+    - "optimistic rollup"
+    - "state channels"
+    - "plasma"
+    - "sharding"
+
+# Regulation Terms
+regulation_terms:
+  # Regulatory bodies
+  bodies:
+    - "sec"
+    - "cftc"
+    - "fca"
+    - "esma"
+    - "binance"
+    - "coinbase"
+    - "kraken"
+    - "regulator"
+    - "regulators"
+
+  # Legal and compliance
+  legal:
+    - "regulation"
+    - "regulatory"
+    - "compliance"
+    - "legal"
+    - "law"
+    - "laws"
+    - "legislation"
+    - "government"
+    - "policy"
+    - "policies"
+
+  # Regulatory actions
+  actions:
+    - "ban"
+    - "banned"
+    - "approve"
+    - "approval"
+    - "license"
+    - "licensed"
+    - "investigation"
+    - "lawsuit"
+    - "sue"
+    - "sued"
+    - "fine"
+    - "penalty"
+
+  # Tax and accounting
+  financial:
+    - "tax"
+    - "taxation"
+    - "irs"
+    - "accounting"
+    - "audit"
+    - "compliance"
+    - "kyc"
+    - "aml"
+    - "anti-money laundering"
+
+# Security Terms
+security_terms:
+  # Attacks and vulnerabilities
+  attacks:
+    - "hack"
+    - "hacked"
+    - "hacking"
+    - "exploit"
+    - "vulnerability"
+    - "breach"
+    - "theft"
+    - "stolen"
+    - "compromised"
+
+  # Security incidents
+  incidents:
+    - "rug pull"
+    - "scam"
+    - "fraud"
+    - "phishing"
+    - "malware"
+    - "virus"
+    - "trojan"
+    - "keylogger"
+    - "social engineering"
+
+  # Security measures
+  measures:
+    - "security"
+    - "secure"
+    - "audit"
+    - "audited"
+    - "insurance"
+    - "custody"
+    - "cold storage"
+    - "multi-sig"
+    - "2fa"
+    - "two-factor"
+
+# Emerging Technologies
+emerging_tech:
+  # AI and blockchain
+  ai_blockchain:
+    - "ai"
+    - "artificial intelligence"
+    - "machine learning"
+    - "neural networks"
+    - "smart contracts"
+    - "autonomous agents"
+    - "oracles"
+    - "chainlink"
+
+  # Gaming and metaverse
+  gaming:
+    - "gamefi"
+    - "play-to-earn"
+    - "p2e"
+    - "metaverse"
+    - "virtual reality"
+    - "vr"
+    - "ar"
+    - "augmented reality"
+    - "digital assets"
+
+  # Web3 infrastructure
+  web3:
+    - "web3"
+    - "dapp"
+    - "dapps"
+    - "decentralized application"
+    - "dao"
+    - "decentralized autonomous organization"
+    - "governance"
+    - "voting"
+
+# Market Events
+market_events:
+  # Major events
+  major:
+    - "halving"
+    - "bitcoin halving"
+    - "ethereum merge"
+    - "the merge"
+    - "ico"
+    - "ipo"
+    - "listing"
+    - "delisting"
+    - "airdrop"
+    - "fork"
+
+  # Economic indicators
+  economic:
+    - "inflation"
+    - "recession"
+    - "fed"
+    - "federal reserve"
+    - "interest rates"
+    - "quantitative easing"
+    - "qe"
+    - "monetary policy"
+
+# Geographic Regions
+geographic:
+  # Major regions
+  regions:
+    - "china"
+    - "usa"
+    - "europe"
+    - "asia"
+    - "japan"
+    - "korea"
+    - "singapore"
+    - "dubai"
+    - "switzerland"
+    - "el salvador"
+
+  # Regulatory hubs
+  hubs:
+    - "wyoming"
+    - "delaware"
+    - "malta"
+    - "gibraltar"
+    - "cayman islands"
+    - "bermuda"
+    - "portugal"
+    - "germany"
+    - "france"

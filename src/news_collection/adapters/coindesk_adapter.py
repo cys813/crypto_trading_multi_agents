@@ -1,320 +1,311 @@
+"""
+CoinDesk新闻源适配器
+"""
+
 import asyncio
-import logging
 from typing import List, Optional, Dict, Any
-from datetime import datetime, timezone
-import re
+from datetime import datetime, timedelta
+import aiohttp
+import logging
+from bs4 import BeautifulSoup
 
-from .base_adapter import BaseNewsAdapter
-from ..models import NewsArticle, NewsCategory, ConnectionStatus, RateLimitInfo, NewsSourceType
+from ..models.base import (
+    NewsArticle,
+    NewsSourceConfig,
+    HealthStatus,
+    NewsQuery,
+    NewsQueryResult,
+    NewsCategory,
+    NewsSourceStatus
+)
+from ..core.adapter import NewsSourceAdapter
+from ..core.error_handler import ErrorContext, ErrorType
 
 
-class CoinDeskAdapter(BaseNewsAdapter):
-    """CoinDesk news adapter implementation."""
+class CoinDeskAdapter(NewsSourceAdapter):
+    """CoinDesk新闻源适配器"""
 
-    def __init__(self, source_config):
-        super().__init__(source_config)
-        self.api_base_url = "https://api.coindesk.com/v1"
-        self.news_endpoint = "/latest headlines"
+    def __init__(self, config: NewsSourceConfig):
+        super().__init__(config)
+        self.logger = logging.getLogger(__name__)
+        self._api_base = "https://api.coindesk.com/v1"
+        self._web_base = "https://www.coindesk.com"
 
     @property
     def source_name(self) -> str:
-        return "CoinDesk"
+        return "coindesk"
 
     @property
-    def supported_categories(self) -> List[NewsCategory]:
-        return [
-            NewsCategory.MARKET_NEWS,
-            NewsCategory.TECHNOLOGY,
-            NewsCategory.REGULATION,
-            NewsCategory.SECURITY,
-            NewsCategory.ADOPTION,
-            NewsCategory.DEFI,
-            NewsCategory.NFT,
-            NewsCategory.EXCHANGE,
-            NewsCategory.MINING,
-            NewsCategory.TRADING,
-        ]
+    def adapter_type(self) -> str:
+        return "coindesk"
 
-    async def fetch_news(
-        self,
-        limit: int = 10,
-        category: Optional[NewsCategory] = None,
-        keywords: Optional[List[str]] = None,
-        since: Optional[datetime] = None,
-    ) -> List[NewsArticle]:
-        """
-        Fetch news articles from CoinDesk.
-
-        Args:
-            limit: Maximum number of articles to fetch
-            category: Filter by news category
-            keywords: Filter by keywords
-            since: Fetch articles published since this time
-
-        Returns:
-            List of news articles
-        """
+    async def connect(self) -> bool:
+        """建立连接"""
         try:
-            # CoinDesk API endpoint for headlines
-            url = f"{self.api_base_url}{self.news_endpoint}"
-
-            params = {
-                "limit": min(limit, 50),  # CoinDesk might have a limit
-            }
-
-            # Add category filter if specified
-            if category:
-                category_mapping = self._get_category_mapping()
-                if category in category_mapping:
-                    params["category"] = category_mapping[category]
-
-            # Add keywords filter if specified
-            if keywords:
-                params["q"] = " OR ".join(keywords)
-
-            # Add time filter if specified
-            if since:
-                params["since"] = since.isoformat()
-
-            self.logger.debug(f"Fetching news from CoinDesk with params: {params}")
-
-            # Make the request
-            data = await self._make_request(url, params=params)
-
-            # Parse articles
-            articles = []
-            if data and "data" in data and "items" in data["data"]:
-                for item in data["data"]["items"][:limit]:
-                    try:
-                        article = self._parse_article(item)
-                        if self._should_include_article(article, category, keywords, since):
-                            articles.append(article)
-                    except Exception as e:
-                        self.logger.error(f"Error parsing article: {str(e)}")
-                        continue
-
-            self.logger.info(f"Fetched {len(articles)} articles from CoinDesk")
-            return articles
+            # 测试API连接
+            test_url = f"{self._api_base}/bpi/currentprice.json"
+            response = await self._make_request(test_url)
+            return response is not None
 
         except Exception as e:
-            self.logger.error(f"Error fetching news from CoinDesk: {str(e)}")
-            raise
-
-    async def test_connection(self) -> ConnectionStatus:
-        """Test connection to CoinDesk API."""
-        start_time = datetime.now()
-        try:
-            # Test with a simple request
-            test_url = f"{self.api_base_url}{self.news_endpoint}"
-            params = {"limit": 1}
-
-            await self._make_request(test_url, params=params)
-
-            response_time = (datetime.now() - start_time).total_seconds() * 1000
-
-            return ConnectionStatus(
-                source_name=self.source_name,
-                is_connected=True,
-                response_time_ms=response_time,
-                last_checked=datetime.now(),
-            )
-
-        except Exception as e:
-            response_time = (datetime.now() - start_time).total_seconds() * 1000
-            return ConnectionStatus(
-                source_name=self.source_name,
-                is_connected=False,
-                response_time_ms=response_time,
-                last_checked=datetime.now(),
-                error_message=str(e),
-                consecutive_failures=self.get_failure_count(),
-            )
-
-    async def get_rate_limit_info(self) -> RateLimitInfo:
-        """Get current rate limit information."""
-        # CoinDesk doesn't provide rate limit info in headers
-        # Return default values
-        return RateLimitInfo(
-            source_name=self.source_name,
-            requests_remaining=self.source_config.rate_limit_per_minute,
-            requests_limit=self.source_config.rate_limit_per_minute,
-            reset_time=datetime.now(),
-        )
-
-    def _parse_article(self, raw_data: Dict[str, Any]) -> NewsArticle:
-        """Parse raw CoinDesk article data."""
-        # Extract basic fields
-        title = raw_data.get("title", "")
-        content = raw_data.get("body", "")
-        url = raw_data.get("url", "")
-        author = raw_data.get("author", {}).get("name") if raw_data.get("author") else None
-
-        # Parse publication date
-        published_at = self._parse_date(raw_data.get("published_at"))
-
-        # Extract summary
-        summary = raw_data.get("summary", "") or raw_data.get("description", "")
-
-        # Extract tags
-        tags = []
-        if "tags" in raw_data and isinstance(raw_data["tags"], list):
-            tags = [tag.get("name", "") for tag in raw_data["tags"] if tag.get("name")]
-
-        # Determine category
-        category = self._determine_category(raw_data)
-
-        # Generate ID
-        article_id = f"coindesk_{raw_data.get('id', '') or hash(title + url)}"
-
-        return NewsArticle(
-            id=article_id,
-            title=title,
-            content=content,
-            summary=summary,
-            url=url,
-            author=author,
-            published_at=published_at,
-            source=NewsSourceType.COINDESK,
-            category=category,
-            tags=tags,
-            metadata={
-                "raw_data": raw_data,
-                "source_specific": {
-                    "image_url": raw_data.get("image_url"),
-                    "video_url": raw_data.get("video_url"),
-                    "reading_time": raw_data.get("reading_time"),
-                },
-            },
-        )
-
-    def _parse_date(self, date_str: Optional[str]) -> Optional[datetime]:
-        """Parse date string from CoinDesk API."""
-        if not date_str:
-            return None
-
-        try:
-            # CoinDesk typically uses ISO format
-            if "T" in date_str:
-                dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-            else:
-                dt = datetime.fromisoformat(date_str)
-
-            # Ensure timezone
-            if dt.tzinfo is None:
-                dt = dt.replace(tzinfo=timezone.utc)
-
-            return dt
-
-        except Exception as e:
-            self.logger.error(f"Error parsing date '{date_str}': {str(e)}")
-            return None
-
-    def _determine_category(self, raw_data: Dict[str, Any]) -> NewsCategory:
-        """Determine article category based on content."""
-        title = raw_data.get("title", "").lower()
-        content = raw_data.get("body", "").lower()
-        tags = raw_data.get("tags", [])
-
-        # Extract tag names
-        tag_names = []
-        if isinstance(tags, list):
-            tag_names = [tag.get("name", "").lower() for tag in tags if isinstance(tag, dict)]
-
-        text_to_analyze = f"{title} {content} {' '.join(tag_names)}"
-
-        # Category keywords
-        category_keywords = {
-            NewsCategory.MARKET_NEWS: [
-                "market", "price", "trading", "bull", "bear", "analysis", "chart", "investment"
-            ],
-            NewsCategory.TECHNOLOGY: [
-                "technology", "tech", "blockchain", "protocol", "development", "innovation", "upgrade"
-            ],
-            NewsCategory.REGULATION: [
-                "regulation", "regulator", "law", "legal", "compliance", "sec", "government"
-            ],
-            NewsCategory.SECURITY: [
-                "security", "hack", "breach", "vulnerability", "exploit", "malware", "safety"
-            ],
-            NewsCategory.ADOPTION: [
-                "adoption", "mainstream", "institutional", "enterprise", "corporate", "business"
-            ],
-            NewsCategory.DEFI: [
-                "defi", "decentralized finance", "yield", "liquidity", "pool", "lending", "borrowing"
-            ],
-            NewsCategory.NFT: [
-                "nft", "non-fungible", "digital art", "collectible", "metaverse", "web3"
-            ],
-            NewsCategory.EXCHANGE: [
-                "exchange", "listing", "delisting", "trading platform", "binance", "coinbase"
-            ],
-            NewsCategory.MINING: [
-                "mining", "miner", "hashrate", "proof of work", "pow", "asic", "gpu"
-            ],
-        }
-
-        # Count matches for each category
-        category_scores = {}
-        for category, keywords in category_keywords.items():
-            score = sum(1 for keyword in keywords if keyword in text_to_analyze)
-            if score > 0:
-                category_scores[category] = score
-
-        # Return category with highest score
-        if category_scores:
-            return max(category_scores, key=category_scores.get)
-
-        return NewsCategory.MARKET_NEWS  # Default
-
-    def _get_category_mapping(self) -> Dict[NewsCategory, str]:
-        """Get mapping of internal categories to CoinDesk categories."""
-        return {
-            NewsCategory.MARKET_NEWS: "markets",
-            NewsCategory.TECHNOLOGY: "tech",
-            NewsCategory.REGULATION: "policy",
-            NewsCategory.SECURITY: "security",
-            NewsCategory.DEFI: "defi",
-            NewsCategory.NFT: "nft",
-        }
-
-    def _should_include_article(
-        self,
-        article: NewsArticle,
-        category: Optional[NewsCategory],
-        keywords: Optional[List[str]],
-        since: Optional[datetime],
-    ) -> bool:
-        """Check if article should be included based on filters."""
-        # Category filter
-        if category and article.category != category:
+            self.logger.error(f"CoinDesk连接失败: {e}")
             return False
 
-        # Keywords filter
-        if keywords:
-            text_to_search = f"{article.title} {article.content} {' '.join(article.tags)}".lower()
-            keyword_matches = any(
-                keyword.lower() in text_to_search
-                for keyword in keywords
-            )
-            if not keyword_matches:
-                return False
-
-        # Time filter
-        if since and article.published_at:
-            if article.published_at < since:
-                return False
-
+    async def disconnect(self) -> bool:
+        """断开连接"""
+        # CoinDesk适配器不需要特殊的断开操作
         return True
 
-    async def _get_auth_headers(self) -> Dict[str, str]:
-        """Get authentication headers for CoinDesk API."""
-        # CoinDesk doesn't require authentication for basic news access
-        return {}
+    async def health_check(self) -> HealthStatus:
+        """健康检查"""
+        start_time = datetime.now()
 
-    async def fetch_by_category(self, category: NewsCategory, limit: int = 10) -> List[NewsArticle]:
-        """Fetch articles by specific category."""
-        return await self.fetch_news(limit=limit, category=category)
+        try:
+            # 测试基本连接
+            test_url = f"{self._api_base}/bpi/currentprice.json"
+            response = await self._make_request(test_url)
 
-    async def search_news(self, query: str, limit: int = 10) -> List[NewsArticle]:
-        """Search for news articles."""
-        return await self.fetch_news(limit=limit, keywords=[query])
+            if response:
+                response_time = (datetime.now() - start_time).total_seconds() * 1000
+                return HealthStatus(
+                    is_healthy=True,
+                    response_time=response_time,
+                    status=NewsSourceStatus.ONLINE,
+                    last_check=start_time
+                )
+            else:
+                return HealthStatus(
+                    is_healthy=False,
+                    response_time=0,
+                    status=NewsSourceStatus.OFFLINE,
+                    last_check=start_time,
+                    error_message="API请求失败"
+                )
+
+        except Exception as e:
+            response_time = (datetime.now() - start_time).total_seconds() * 1000
+            return HealthStatus(
+                is_healthy=False,
+                response_time=response_time,
+                status=NewsSourceStatus.OFFLINE,
+                last_check=start_time,
+                error_message=str(e)
+            )
+
+    async def fetch_news(self, query: NewsQuery) -> NewsQueryResult:
+        """获取新闻"""
+        start_time = datetime.now()
+        articles = []
+        errors = []
+
+        try:
+            # CoinDesk的API有限制，这里使用网页抓取作为示例
+            # 实际使用时应该申请官方API
+            news_url = f"{self._web_base}/"
+
+            # 获取新闻列表
+            if query.keywords:
+                # 如果有关键词，尝试搜索
+                search_url = f"{self._web_base}/search?q={'+'.join(query.keywords)}"
+                articles = await self._scrape_news_page(search_url, query.limit)
+            else:
+                # 获取最新新闻
+                articles = await self._scrape_news_page(news_url, query.limit)
+
+            # 过滤文章
+            filtered_articles = self._filter_articles(articles, query)
+
+            execution_time = (datetime.now() - start_time).total_seconds() * 1000
+
+            return NewsQueryResult(
+                articles=filtered_articles,
+                total_count=len(filtered_articles),
+                has_more=False,
+                query=query,
+                execution_time=execution_time,
+                sources_used=[self.source_name],
+                errors=errors
+            )
+
+        except Exception as e:
+            execution_time = (datetime.now() - start_time).total_seconds() * 1000
+            errors.append(f"获取新闻失败: {str(e)}")
+            self.logger.error(f"CoinDesk获取新闻失败: {e}")
+
+            return NewsQueryResult(
+                articles=[],
+                total_count=0,
+                has_more=False,
+                query=query,
+                execution_time=execution_time,
+                sources_used=[],
+                errors=errors
+            )
+
+    async def get_latest_news(self, limit: int = 20) -> List[NewsArticle]:
+        """获取最新新闻"""
+        try:
+            query = NewsQuery(limit=limit)
+            result = await self.fetch_news(query)
+            return result.articles
+
+        except Exception as e:
+            self.logger.error(f"获取最新新闻失败: {e}")
+            return []
+
+    async def search_news(self, keywords: List[str], limit: int = 50) -> List[NewsArticle]:
+        """搜索新闻"""
+        try:
+            query = NewsQuery(keywords=keywords, limit=limit)
+            result = await self.fetch_news(query)
+            return result.articles
+
+        except Exception as e:
+            self.logger.error(f"搜索新闻失败: {e}")
+            return []
+
+    async def _scrape_news_page(self, url: str, limit: int) -> List[NewsArticle]:
+        """抓取新闻页面"""
+        try:
+            async with self.session.get(url) as response:
+                if response.status == 200:
+                    html = await response.text()
+                    return self._parse_news_html(html, limit)
+                else:
+                    self.logger.error(f"HTTP错误: {response.status}")
+                    return []
+
+        except Exception as e:
+            self.logger.error(f"抓取页面失败: {e}")
+            return []
+
+    def _parse_news_html(self, html: str, limit: int) -> List[NewsArticle]:
+        """解析新闻HTML"""
+        articles = []
+        soup = BeautifulSoup(html, 'html.parser')
+
+        # CoinDesk网站结构可能变化，这里提供基本的解析逻辑
+        # 查找新闻文章链接
+        news_links = soup.find_all('a', href=True)
+
+        for link in news_links[:limit * 2]:  # 获取更多链接然后过滤
+            href = link.get('href', '')
+            title = link.get_text(strip=True)
+
+            # 过滤新闻链接
+            if self._is_news_link(href) and title and len(title) > 20:
+                # 生成文章ID
+                article_id = f"coindesk_{hash(href) % 1000000}"
+
+                article = NewsArticle(
+                    id=article_id,
+                    title=title,
+                    content="",
+                    source=self.source_name,
+                    url=self._normalize_url(href),
+                    published_at=datetime.now(),
+                    category=self._categorize_by_title(title),
+                    metadata={
+                        "scraped_url": href,
+                        "scraped_at": datetime.now().isoformat()
+                    }
+                )
+
+                articles.append(article)
+
+                if len(articles) >= limit:
+                    break
+
+        return articles
+
+    def _is_news_link(self, href: str) -> bool:
+        """判断是否为新闻链接"""
+        if not href or href.startswith('#'):
+            return False
+
+        # 排除非新闻页面
+        excluded_paths = ['/search', '/author', '/tag', '/category', '/video', '/podcast']
+        for path in excluded_paths:
+            if path in href:
+                return False
+
+        # 包含新闻相关的路径
+        news_keywords = ['2024', '2023', 'bitcoin', 'crypto', 'ethereum', 'blockchain', 'defi', 'nft']
+        return any(keyword in href.lower() for keyword in news_keywords)
+
+    def _normalize_url(self, href: str) -> str:
+        """标准化URL"""
+        if href.startswith('http'):
+            return href
+        elif href.startswith('//'):
+            return f"https:{href}"
+        elif href.startswith('/'):
+            return f"{self._web_base}{href}"
+        else:
+            return f"{self._web_base}/{href}"
+
+    def _categorize_by_title(self, title: str) -> NewsCategory:
+        """根据标题分类"""
+        title_lower = title.lower()
+
+        if any(word in title_lower for word in ['hack', 'security', 'breach', 'exploit']):
+            return NewsCategory.SECURITY
+        elif any(word in title_lower for word in ['price', 'market', 'trading', 'analysis']):
+            return NewsCategory.MARKET_ANALYSIS
+        elif any(word in title_lower for word in ['regulation', 'law', 'legal', 'government']):
+            return NewsCategory.REGULATION
+        elif any(word in title_lower for word in ['tech', 'development', 'upgrade', 'protocol']):
+            return NewsCategory.TECHNOLOGY
+        elif any(word in title_lower for word in ['adoption', 'institutional', 'investment']):
+            return NewsCategory.ADOPTION
+        elif any(word in title_lower for word in ['breaking', 'alert', 'urgent']):
+            return NewsCategory.BREAKING
+        else:
+            return NewsCategory.GENERAL
+
+    def _filter_articles(self, articles: List[NewsArticle], query: NewsQuery) -> List[NewsArticle]:
+        """过滤文章"""
+        filtered = articles
+
+        # 按分类过滤
+        if query.categories:
+            filtered = [a for a in filtered if a.category in query.categories]
+
+        # 按时间过滤
+        if query.start_date:
+            filtered = [a for a in filtered if a.published_at and a.published_at >= query.start_date]
+
+        if query.end_date:
+            filtered = [a for a in filtered if a.published_at and a.published_at <= query.end_date]
+
+        # 按关键词过滤
+        if query.keywords:
+            filtered = [a for a in filtered if self._matches_keywords(a, query.keywords)]
+
+        return filtered[:query.limit]
+
+    def _matches_keywords(self, article: NewsArticle, keywords: List[str]) -> bool:
+        """检查文章是否匹配关键词"""
+        text_to_search = f"{article.title} {article.content} {' '.join(article.tags)}".lower()
+        return any(keyword.lower() in text_to_search for keyword in keywords)
+
+    async def _make_request(self, url: str, method: str = "GET", **kwargs) -> Optional[Dict[str, Any]]:
+        """重写请求方法以适配CoinDesk"""
+        try:
+            async with self.session.request(method, url, **kwargs) as response:
+                if response.status == 200:
+                    if response.content_type == 'application/json':
+                        return await response.json()
+                    else:
+                        return {"content": await response.text()}
+                else:
+                    self.logger.error(f"HTTP错误: {response.status}")
+                    return None
+
+        except Exception as e:
+            self.logger.error(f"请求失败: {e}")
+            return None
+
+
+# 注册适配器
+NewsSourceAdapterFactory.register_adapter("coindesk", CoinDeskAdapter)
